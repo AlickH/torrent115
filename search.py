@@ -500,7 +500,7 @@ def search_site(cfg, key, q, resolved=None):
     if key == "bitmagnet":
         return search_bitmagnet(cfg, q, resolved)
     if key == "jackett":
-        return search_jackett(cfg, q)
+        return search_jackett(cfg, effective_query(q, resolved))
     kind = site.get("kind")
     if kind not in ("json", "rss"):
         return [], "不支持的来源类型"
