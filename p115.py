@@ -202,12 +202,17 @@ def p115_list_files(cfg, cid="0"):
     items = p115_children(cfg, cid)
     out = []
     for x in items:
+        t = x.get("t") or ""
+        try:
+            t = int(t)
+        except Exception:
+            pass
         if x.get("cid") is not None:
             out.append({"id": str(x.get("cid")), "name": x.get("n") or "", "is_dir": True,
-                        "size": 0, "mtime": x.get("t") or ""})
+                        "size": 0, "mtime": t})
         else:
             out.append({"id": str(x.get("fid") or ""), "name": x.get("n") or "", "is_dir": False,
-                        "size": int(x.get("s") or 0), "mtime": x.get("t") or ""})
+                        "size": int(x.get("s") or 0), "mtime": t})
     out.sort(key=lambda x: (not x["is_dir"], x["name"].lower()))
     return out
 
