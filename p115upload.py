@@ -34,6 +34,46 @@ def upload_file(cfg, path, cid=None):
         raise RuntimeError("未配置 115 Cookie")
     pid = int(cid or cfg.get("p115_upload_cid") or cfg.get("p115_target_cid") or 0)
     client = P115Client(cookie)
+
+    # 115 上传 token 接口对 p115sync 的会话偶发 TLS EOF，用独立会话重试
+    def _safe_gettoken():
+        import httpx
+        last = None
+        for _ in range(3):
+            try:
+                r = httpx.get("https://uplb.115.com/3.0/gettoken.php", cookies=client.cookies, timeout=20)
+                r.raise_for_status()
+                raw = r.json()
+                if raw.get("state"):
+                    return raw
+                if str(raw.get("StatusCode")) == "200":
+                    data = {k: raw.get(k) for k in ("AccessKeyId", "AccessKeySecret", "SecurityToken", "Expiration")}
+                    return {"state": True, "data": data}
+                return raw
+            except Exception as e:
+                last = e
+                time.sleep(1)
+        raise last
+
+    client.upload_gettoken = _safe_gettoken
+
+    # 115 部分接口偶发 SSL EOF，给客户端请求加有限重试
+    _orig_request = client._request_json
+
+    def _retry_request(method, path, **kwargs):
+        last = None
+        for _ in range(4):
+            try:
+                return _orig_request(method, path, **kwargs)
+            except Exception as e:
+                last = e
+                msg = str(e)
+                if not any(x in msg for x in ("SSL", "EOF", "timed out", "Timeout")):
+                    raise
+                time.sleep(1)
+        raise last
+
+    client._request_json = _retry_request
     helper = P115UploadHelper(client)
     return helper.upload_file_sample(path, pid=pid)
 

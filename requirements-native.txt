@@ -5,3 +5,4 @@ Brotli>=1.1.0
 psycopg2-binary>=2.9
 gunicorn>=21.2
 p115sync>=0.1
+typing_extensions>=4.16
