@@ -45,8 +45,15 @@ appcenter-cli start torrent115
 ## 升级
 
 1. 更新镜像并重新构建 fpk（版本号递增）；
-2. `appcenter-cli install-fpk` 安装新包，应用中心执行升级流程；
-3. 升级前 `cmd/upgrade_init` 会导入新镜像，数据目录保留。
+2. 使用升级脚本（会先备份数据）：
+
+```bash
+bash fnos/upgrade.sh artifacts/release/Torrent115-0.2.0.fpk
+```
+
+也可以从应用中心「手动安装」覆盖升级。
+
+> 注意：当前 fnOS 的 `appcenter-cli install-fpk` 在应用已安装时不会执行升级，只会提示 `is installed`；脚本通过「备份数据 → 卸载 → 安装 → 恢复数据 → 启动」完成升级。
 
 ## 已知限制
 
