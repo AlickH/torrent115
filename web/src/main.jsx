@@ -23,11 +23,17 @@ function Root() {
   const [dark, setDark] = React.useState(() => resolve(localStorage.getItem('t115_theme_mode') || 'auto'));
   React.useEffect(() => {
     if (!trimApp) return;
-    trimApp.setTitle && trimApp.setTitle('Torrent115').catch(() => {});
-    trimApp.getPlatformConfig && trimApp.getPlatformConfig()
-      .then(cfg => { if (cfg && cfg.theme) setHostTheme(cfg.theme); })
-      .catch(() => {});
-    try { trimApp.$on && trimApp.$on('os/theme', t => setHostTheme(t)); } catch { /* ignore */ }
+    try {
+      const title = trimApp.setTitle && trimApp.setTitle('Torrent115');
+      if (title && title.catch) title.catch(() => {});
+      const cfgPromise = trimApp.getPlatformConfig && trimApp.getPlatformConfig();
+      if (cfgPromise && cfgPromise.then) {
+        cfgPromise
+          .then(cfg => { if (cfg && cfg.theme) setHostTheme(cfg.theme); })
+          .catch(() => {});
+      }
+      trimApp.$on && trimApp.$on('os/theme', t => setHostTheme(t));
+    } catch { /* 非 fnOS 宿主环境 */ }
   }, []);
   React.useEffect(() => {
     const fn = () => setDark(resolve(mode, hostTheme));
