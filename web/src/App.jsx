@@ -493,7 +493,7 @@ export default function App({ mode, setMode, dark }) {
     <Menu
       className="app-sidebar-menu"
       mode="inline"
-      selectable={false}
+      selectedKeys={['search']}
       style={{ border: 'none', background: 'transparent' }}
       items={[
         { key: 'search', icon: <SearchOutlined />, label: '搜索' },
@@ -525,7 +525,7 @@ export default function App({ mode, setMode, dark }) {
   return (
     <div className="page" style={{ minHeight: '100vh', background: bg }}>
       {!isMobile ? (
-        <aside style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: 208, zIndex: 30, display: 'flex', flexDirection: 'column', padding: '12px 8px', background: token.colorBgContainer, borderRight: `1px solid ${token.colorBorderSecondary}` }}>
+        <aside style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: 200, zIndex: 30, display: 'flex', flexDirection: 'column', padding: '10px 8px', background: bg }}>
           {brandMark}
           <div style={{ flex: 1, overflow: 'auto' }}>{navMenu}</div>
           <Typography.Text type="secondary" style={{ fontSize: 11, padding: 8 }}>磁力搜索 → 115 云下载</Typography.Text>
@@ -534,17 +534,17 @@ export default function App({ mode, setMode, dark }) {
       <Drawer open={navOpen} onClose={() => setNavOpen(false)} placement="left" width={250} title="Torrent115" styles={{ body: { padding: 8 } }}>
         {navMenu}
       </Drawer>
-      <div className="page-inner" style={{ paddingLeft: isMobile ? undefined : 224 }}>
+      <div className="page-inner" style={isMobile ? { padding: 12, height: '100vh', overflow: 'auto' } : { marginLeft: 208, marginRight: 8, marginTop: 8, marginBottom: 8, height: 'calc(100vh - 16px)', overflow: 'auto', maxWidth: 'none', background: token.colorBgContainer, borderRadius: 12, padding: 20, boxShadow: '0 1px 2px rgba(0,0,0,.04)' }}>
         {track.auto?.running ? (
           <div style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 1000, background: token.colorBgContainer, border: `1px solid ${token.colorBorderSecondary}`, borderRadius: 24, padding: '8px 16px', boxShadow: '0 6px 20px rgba(0,0,0,.12)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Spin size="small" />
             <span style={{ fontSize: 13 }}>自动任务运行中…</span>
           </div>
         ) : null}
-        <div ref={topRef} className="topbar" style={{ position: 'sticky', top: 0, zIndex: 20, background: bg }}>
+        <div ref={topRef} className="topbar" style={{ position: 'sticky', top: 0, zIndex: 20, background: token.colorBgContainer, paddingBottom: 8 }}>
           <div className="pad-x" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {isMobile ? <Button type="text" icon={<MenuOutlined />} onClick={() => setNavOpen(true)} /> : null}
-            <Typography.Text strong style={{ fontSize: 15 }}>磁力搜索 → 115 云下载</Typography.Text>
+            <Typography.Text strong style={{ fontSize: 17 }}>磁力搜索</Typography.Text>
           </div>
           {cfg?.is_default_auth ? (
             <div style={{ marginTop: 8, padding: '6px 12px', background: token.colorWarningBg, borderRadius: token.borderRadius }}>
