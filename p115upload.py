@@ -33,7 +33,13 @@ def upload_file(cfg, path, cid=None):
     if not cookie:
         raise RuntimeError("未配置 115 Cookie")
     pid = int(cid or cfg.get("p115_upload_cid") or cfg.get("p115_target_cid") or 0)
-    client = P115Client(cookie)
+    import httpx as _httpx
+    proxy = (cfg.get("outbound_proxy") or "").strip() or None
+    try:
+        session = _httpx.Client(proxy=proxy, follow_redirects=True, timeout=60)
+    except TypeError:
+        session = _httpx.Client(proxies=proxy, follow_redirects=True, timeout=60) if proxy else None
+    client = P115Client(cookie, session=session)
 
     # 115 上传 token 接口对 p115sync 的会话偶发 TLS EOF，用独立会话重试
     def _safe_gettoken():
@@ -57,12 +63,18 @@ def upload_file(cfg, path, cid=None):
 
     client.upload_gettoken = _safe_gettoken
 
+    old_http_proxy = os.environ.get("HTTP_PROXY")
+    old_https_proxy = os.environ.get("HTTPS_PROXY")
+    if proxy:
+        os.environ["HTTP_PROXY"] = proxy
+        os.environ["HTTPS_PROXY"] = proxy
+
     # 115 部分接口偶发 SSL EOF，给客户端请求加有限重试
     _orig_request = client._request_json
 
     def _retry_request(method, path, **kwargs):
         last = None
-        for _ in range(4):
+        for _ in range(8):
             try:
                 return _orig_request(method, path, **kwargs)
             except Exception as e:
@@ -75,7 +87,17 @@ def upload_file(cfg, path, cid=None):
 
     client._request_json = _retry_request
     helper = P115UploadHelper(client)
-    return helper.upload_file_sample(path, pid=pid)
+    try:
+        return helper.upload_file_sample(path, pid=pid)
+    finally:
+        if old_http_proxy is None:
+            os.environ.pop("HTTP_PROXY", None)
+        else:
+            os.environ["HTTP_PROXY"] = old_http_proxy
+        if old_https_proxy is None:
+            os.environ.pop("HTTPS_PROXY", None)
+        else:
+            os.environ["HTTPS_PROXY"] = old_https_proxy
 
 
 def upload_completed(cfg):
