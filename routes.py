@@ -775,3 +775,24 @@ def api_bt_detail():
         return jsonify({"ok": True, **btdownloader.detail(h)})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@bp.route("/api/115/files")
+def api_115_files():
+    cfg = load_config()
+    cid = (request.args.get("cid") or "0").strip()
+    try:
+        from p115 import p115_list_files
+        return jsonify({"ok": True, "cid": cid, "files": p115_list_files(cfg, cid)})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e), "files": []}), 500
+
+
+@bp.route("/api/115/offline")
+def api_115_offline():
+    cfg = load_config()
+    try:
+        from p115 import p115_offline_list
+        return jsonify({"ok": True, "tasks": p115_offline_list(cfg)})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e), "tasks": []}), 500

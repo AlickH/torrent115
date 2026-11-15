@@ -197,3 +197,37 @@ def _is_video(x):
 
 def _is_dir(x):
     return "fid" not in x and bool(x.get("cid"))
+
+def p115_list_files(cfg, cid="0"):
+    items = p115_children(cfg, cid)
+    out = []
+    for x in items:
+        if x.get("cid") is not None:
+            out.append({"id": str(x.get("cid")), "name": x.get("n") or "", "is_dir": True,
+                        "size": 0, "mtime": int(x.get("t") or 0)})
+        else:
+            out.append({"id": str(x.get("fid") or ""), "name": x.get("n") or "", "is_dir": False,
+                        "size": int(x.get("s") or 0), "mtime": int(x.get("t") or 0)})
+    out.sort(key=lambda x: (not x["is_dir"], x["name"].lower()))
+    return out
+
+
+def p115_offline_list(cfg):
+    tasks = p115_task_list(cfg, rows=100)
+    out = []
+    for t in tasks.values():
+        out.append({
+            "hash": t.get("info_hash") or "",
+            "name": t.get("name") or "",
+            "status": t.get("display_status") or "",
+            "status_text": t.get("status_text") or "",
+            "percent": float(t.get("display_percent") or 0),
+            "size": int(t.get("size") or 0),
+            "downloaded": int(t.get("size") or 0) * float(t.get("display_percent") or 0) / 100.0,
+            "rate": int(t.get("rateDownload") or 0),
+            "add_time": int(t.get("add_time") or 0),
+            "file_id": str(t.get("file_id") or ""),
+            "pick_code": t.get("pick_code") or "",
+        })
+    out.sort(key=lambda x: x["add_time"], reverse=True)
+    return out

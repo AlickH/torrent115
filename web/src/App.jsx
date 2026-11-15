@@ -9,6 +9,7 @@ const AiPresetModal = lazy(() => import('./components/SettingsModals.jsx').then(
 const AccountModal = lazy(() => import('./components/SettingsModals.jsx').then(m => ({ default: m.AccountModal })));
 const TrendingModal = lazy(() => import('./components/TrendingModal.jsx'));
 const BtDownloads = lazy(() => import('./components/BtDownloads.jsx'));
+const Yun115 = lazy(() => import('./components/Yun115.jsx'));
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert, App as AntApp, AutoComplete, Button, Checkbox, Collapse, Col, Divider, Dropdown, Empty, Flex, Form, Image, Input, theme,
@@ -16,7 +17,7 @@ import {
 } from 'antd';
 import {
   CalendarOutlined, CheckCircleOutlined, DesktopOutlined, EyeOutlined, FileTextOutlined, LogoutOutlined, MenuOutlined, MoonOutlined, PlusOutlined, QrcodeOutlined, SearchOutlined, SyncOutlined,
-  SettingOutlined, SlidersOutlined, SunOutlined, FireOutlined, DownloadOutlined,
+  SettingOutlined, SlidersOutlined, SunOutlined, FireOutlined, DownloadOutlined, CloudOutlined,
 } from '@ant-design/icons';
 
 const SOURCE_LABELS = {
@@ -582,6 +583,7 @@ export default function App({ mode, setMode, dark }) {
         { key: 'auto', icon: <CalendarOutlined />, label: '追剧自动转存' },
         { key: 'trending', icon: <FireOutlined />, label: 'TMDB 最近热映' },
         { key: 'bt', icon: <DownloadOutlined />, label: 'BT 下载' },
+        { key: 'yun115', icon: <CloudOutlined />, label: '115 网盘' },
         { type: 'divider' },
         { key: 'settings', icon: <SettingOutlined />, label: '设置' },
         { key: 'logout', icon: <LogoutOutlined />, label: '退出登录' },
@@ -691,6 +693,10 @@ export default function App({ mode, setMode, dark }) {
         </>) : view === 'bt' ? (
           <div style={{ flex: 1, minHeight: 0 }}>
             <Suspense fallback={null}><BtDownloads /></Suspense>
+          </div>
+        ) : view === 'yun115' ? (
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <Suspense fallback={null}><Yun115 /></Suspense>
           </div>
         ) : view === 'auto' ? (
           <div style={{ flex: 1, minHeight: 0 }}>
