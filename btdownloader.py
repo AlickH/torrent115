@@ -6,10 +6,10 @@ import requests
 import requests_unixsocket
 
 SOCK = os.environ.get("T115_QBT_SOCK", "/data/qbt.sock")
-BASE = "http://localhost"
+BASE = "http+unix://" + requests.utils.quote(SOCK, safe="")
 AUTH = ("admin", "t115pass")
 _s = requests.Session()
-_s.mount("http://localhost", requests_unixsocket.UnixAdapter())
+_s.mount("http+unix://", requests_unixsocket.UnixAdapter())
 _lock = threading.Lock()
 _logged = False
 
@@ -20,7 +20,7 @@ def _login():
         if _logged:
             return True
         try:
-            r = _s.post(f"http://localhost/api/v2/auth/login", data={"username": AUTH[0], "password": AUTH[1]}, timeout=10)
+            r = _s.post(f"{BASE}/api/v2/auth/login", data={"username": AUTH[0], "password": AUTH[1]}, timeout=10)
             _logged = r.status_code == 200 and r.text.strip() == "Ok."
         except requests.RequestException:
             _logged = False
