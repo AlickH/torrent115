@@ -12,19 +12,24 @@ export function hostApp() {
 
 export async function pickFolder(title) {
   const a = hostApp();
-  if (!a) return null;
+  if (!a) return { error: '当前环境不支持系统文件夹选择器' };
   const label = title || '选择文件夹';
-  const methods = [
-    () => a.pickUserFile && a.pickUserFile({ directory: true, title: label }),
-    () => a.pickFile && a.pickFile({ directory: true, title: label }),
-    () => a.pickSharedFile && a.pickSharedFile({ title: label }),
-  ];
-  for (const run of methods) {
+  const attempts = [
+    a.pickUserFile && (() => a.pickUserFile({ directory: true, title: label })),
+    a.pickFile && (() => a.pickFile({ directory: true, title: label })),
+    a.pickSharedFile && (() => a.pickSharedFile({ title: label })),
+  ].filter(Boolean);
+  let lastError = null;
+  for (const run of attempts) {
     try {
       const r = await run();
-      if (Array.isArray(r) && r[0]) return r[0];
-      if (r && r.data && r.data[0]) return r.data[0];
-    } catch { /* try next */ }
+      if (Array.isArray(r)) return { path: r[0] || null };
+      if (r && Array.isArray(r.data)) return { path: r.data[0] || null };
+      // undefined / 空结果 = 用户取消，直接返回，不再尝试下一个选择器
+      return { path: null };
+    } catch (e) {
+      lastError = e;
+    }
   }
-  return null;
+  return { error: (lastError && lastError.message) || '当前环境不支持系统文件夹选择器' };
 }

@@ -116,7 +116,7 @@ export function SettingsModal(props) {
         <Form.Item label="保存目录">
           <Space.Compact style={{ width: '100%' }}>
             <Input value={localSavePath} onChange={e => setLocalSavePath(e.target.value)} placeholder="/data/downloads" />
-            <Button onClick={async () => { const p = await pickFolder('选择下载保存目录'); if (p) setLocalSavePath(p); else message.warning('未选择文件夹，或当前环境不支持系统选择器'); }}>选择</Button>
+            <Button onClick={async () => { const r = await pickFolder('选择下载保存目录'); if (r.path) setLocalSavePath(r.path); else if (r.error) message.warning(r.error); }}>选择</Button>
           </Space.Compact>
         </Form.Item>
         <Form.Item label="完成后移动到目标目录">
@@ -125,7 +125,7 @@ export function SettingsModal(props) {
         <Form.Item label="移动目标目录">
           <Space.Compact style={{ width: '100%' }}>
             <Input value={localDonePath} onChange={e => setLocalDonePath(e.target.value)} disabled={!localMoveEnabled} placeholder="/data/downloads/Done" />
-            <Button disabled={!localMoveEnabled} onClick={async () => { const p = await pickFolder('选择完成目录'); if (p) setLocalDonePath(p); else message.warning('未选择文件夹，或当前环境不支持系统选择器'); }}>选择</Button>
+            <Button disabled={!localMoveEnabled} onClick={async () => { const r = await pickFolder('选择完成目录'); if (r.path) setLocalDonePath(r.path); else if (r.error) message.warning(r.error); }}>选择</Button>
           </Space.Compact>
         </Form.Item>
         <Divider orientation="left" style={{ margin: '4px 0 12px' }}>上传到 115</Divider>
