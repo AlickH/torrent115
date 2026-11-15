@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as Antd from 'antd';
 import { CheckCircleOutlined, PlusOutlined, SettingOutlined, SyncOutlined } from '@ant-design/icons';
-import { posterUrl } from '../api.js';
+import { posterUrl, APP_BASE } from '../api.js';
 import { fmtTime } from '../lib/format.js';
 
 const { Alert, Button, Col, Collapse, Divider, Empty, Flex, Form, Input, InputNumber, Modal, Row, Select, Space, Spin, Switch, Tabs, Tag, Typography } = Antd;
@@ -480,7 +480,7 @@ export default function TrackingModals(p) {
               <Typography.Paragraph>
                 1. 在 Trakt 应用设置里把 <b>Redirect URI</b> 填为（必须完全一致）：
               </Typography.Paragraph>
-              <Typography.Paragraph copyable code>{traktRedirectUri || (window.location.origin + '/api/trakt/callback')}</Typography.Paragraph>
+              <Typography.Paragraph copyable code>{traktRedirectUri || (window.location.origin + APP_BASE + '/api/trakt/callback')}</Typography.Paragraph>
               <Typography.Paragraph>
                 2. 点击下方按钮重新打开授权页，登录并授权后本窗口会自动完成。
               </Typography.Paragraph>

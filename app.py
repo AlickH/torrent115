@@ -92,6 +92,10 @@ def _clear_fail(ip):
 
 
 @app.before_request
+def _redirect(path):
+    return redirect((request.script_root or "") + path)
+
+
 def _require_login():
     if not _auth_enabled():
         return None
@@ -102,18 +106,18 @@ def _require_login():
             session.clear()
             if request.path.startswith("/api/"):
                 return jsonify({"ok": False, "error": "登录已失效，请重新登录"}), 401
-            return redirect("/login")
+            return _redirect("/login")
         return None
     if request.path.startswith("/api/"):
         return jsonify({"ok": False, "error": "未登录"}), 401
-    return redirect("/login")
+    return _redirect("/login")
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     cfg = load_config()
     if not cfg.get("auth_password"):
-        return redirect("/")
+        return _redirect("/")
     error = ""
     status = 200
     ip = _client_ip()
@@ -131,7 +135,7 @@ def login():
                 session["auth"] = True
                 session["pv"] = _pwd_fingerprint(pwd)
                 session.permanent = True
-                return redirect("/")
+                return _redirect("/")
             _record_fail(ip)
             locked, remain = _login_locked(ip)
             if locked:
@@ -168,7 +172,7 @@ button{width:100%;background:#5b8cff;color:#fff;border:0;border-radius:8px;paddi
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect("/login")
+    return _redirect("/login")
 
 
 app.secret_key = load_config().get("secret_key") or ""

@@ -12,3 +12,4 @@ fnos/app/docker/offline-image.env
 fnos-native/app/server/
 artifacts/
 fnos-native/wheelhouse/
+static-native/

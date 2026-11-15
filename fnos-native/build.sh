@@ -24,7 +24,7 @@ SERVER="$STAGE/app/server"
 mkdir -p "$SERVER"
 cp "$ROOT"/*.py "$ROOT/wsgi.py" "$ROOT/requirements-native.txt" "$SERVER/"
 rm -f "$SERVER/localtorrent.py.orig" 2>/dev/null || true
-cp -R "$ROOT/static" "$SERVER/static"
+cp -R "${STATIC_DIR:-$ROOT/static-native}" "$SERVER/static"
 cp -R "$WH" "$SERVER/wheelhouse"
 find "$STAGE" -name '._*' -delete
 mkdir -p "$ROOT/artifacts/release"

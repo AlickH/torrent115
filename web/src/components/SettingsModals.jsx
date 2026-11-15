@@ -3,7 +3,7 @@ import {
   Alert, AutoComplete, Button, Divider, Flex, Form, Input, InputNumber, Modal, Segmented, Select, Space, Switch, Tag, Typography,
 } from 'antd';
 import { EyeOutlined, QrcodeOutlined } from '@ant-design/icons';
-import { api } from '../api.js';
+import { api, APP_BASE } from '../api.js';
 
 export function SettingsModal(props) {
   const {
@@ -154,7 +154,7 @@ export function SettingsModal(props) {
         <Form.Item label="Trakt Client ID"><Input value={autoForm.traktClientId} onChange={e => setAutoForm({ ...autoForm, traktClientId: e.target.value })} placeholder="可选" /></Form.Item>
         <Form.Item label="Trakt Access Token"><Input.Password value={traktToken} onChange={e => setTraktToken(e.target.value)} placeholder={auto?.has_trakt ? '已配置（点击右侧眼睛显示 / 可粘贴新的）' : '未配置'} visibilityToggle={{ visible: !!traktToken, onVisibleChange: v => { if (!v) setTraktToken(''); else revealTrakt(); } }} /></Form.Item>
         <Typography.Paragraph type="secondary" style={{ fontSize: 12, marginBottom: 8 }}>
-          Trakt 应用里的 <b>Redirect URI</b> 必须填：<Typography.Text code copyable>{window.location.origin + '/api/trakt/callback'}</Typography.Text>
+          Trakt 应用里的 <b>Redirect URI</b> 必须填：<Typography.Text code copyable>{window.location.origin + APP_BASE + '/api/trakt/callback'}</Typography.Text>
         </Typography.Paragraph>
         <Flex gap={8} align="center" wrap style={{ marginBottom: 4 }}>
           <Button onClick={startTraktOauth}>OAuth 获取 Token</Button>

@@ -1,4 +1,4 @@
-import { api, posterUrl, withTrackers } from './api.js';
+import { api, APP_BASE, posterUrl, withTrackers } from './api.js';
 import useAutoTrack from './hooks/useAutoTrack.js';
 import { fmtTime } from './lib/format.js';
 import { Suspense, lazy } from 'react';
@@ -549,7 +549,7 @@ export default function App({ mode, setMode, dark }) {
       selectedKeys={[view]}
       onClick={({ key }) => {
         setNavOpen(false);
-        if (key === 'logout') window.location.href = '/logout';
+        if (key === 'logout') window.location.href = APP_BASE + '/logout';
         else setView(key);
       }}
     />

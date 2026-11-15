@@ -1,3 +1,10 @@
+export const APP_BASE = (import.meta.env.VITE_APP_BASE || '').replace(/\/$/, '');
+
+function withBase(path) {
+  if (!APP_BASE || !path.startsWith('/')) return path;
+  return APP_BASE + path;
+}
+
 export async function api(path, { method = 'GET', body, signal } = {}) {
   const opts = { method, credentials: 'same-origin', headers: {} };
   if (signal) opts.signal = signal;
@@ -5,14 +12,14 @@ export async function api(path, { method = 'GET', body, signal } = {}) {
     opts.headers['Content-Type'] = 'application/json';
     opts.body = JSON.stringify(body);
   }
-  const r = await fetch(path, opts);
+  const r = await fetch(withBase(path), opts);
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
   return data;
 }
 
 export function posterUrl(p) {
-  return p ? '/api/tmdb/img?path=' + encodeURIComponent(p) : '';
+  return p ? withBase('/api/tmdb/img?path=') + encodeURIComponent(p) : '';
 }
 
 
