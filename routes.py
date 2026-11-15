@@ -313,7 +313,7 @@ def api_search():
     q = (request.args.get("q") or "").strip()
     if not q:
         return jsonify({"items": [], "errors": {"all": "请输入关键词"}})
-    sources = [s for s in (request.args.get("sources") or "pansou,apibay,nyaa,dmhy,btsearch,eztv,knaben,therarbg,bitmagnet").split(",") if s]
+    sources = [s for s in (request.args.get("sources") or "pansou,apibay,nyaa,dmhy,btsearch,eztv,knaben,therarbg,bitmagnet,jackett").split(",") if s]
     key = ("all", q, tuple(sources))
     cached = _cache_get(key)
     if cached:
@@ -376,7 +376,7 @@ def api_search_sites():
     q = (request.args.get("q") or "").strip()
     if not q:
         return jsonify({"items": [], "errors": {"all": "请输入关键词"}})
-    sources = [s for s in (request.args.get("sources") or "apibay,nyaa,dmhy,btsearch,eztv,knaben,therarbg,bitmagnet").split(",") if s]
+    sources = [s for s in (request.args.get("sources") or "apibay,nyaa,dmhy,btsearch,eztv,knaben,therarbg,bitmagnet,jackett").split(",") if s]
     key = ("sites", q, tuple(sources))
     cached = _cache_get(key)
     if cached:
