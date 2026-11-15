@@ -14,18 +14,6 @@ start_app() {
   mkdir -p "${TRIM_PKGVAR}/logs"
   if [ -f "${TRIM_PKGVAR}/init.env" ]; then set -a; . "${TRIM_PKGVAR}/init.env"; set +a; fi
   PORT="${T115_WEB_PORT:-8099}"
-  export T115_DOWNLOAD_DIR="${TRIM_PKGVAR}/data/downloads"
-  mkdir -p "$T115_DOWNLOAD_DIR" "${TRIM_PKGVAR}/data/transmission"
-  case "$(uname -m)" in aarch64|arm64) ARCH=arm ;; *) ARCH=x86 ;; esac
-  TDIR="${TRIM_APPDEST}/server/bin/${ARCH}"
-  if [ -x "${TDIR}/transmission-daemon" ] && ! pgrep -f "transmission-daemon.*${TRIM_PKGVAR}" >/dev/null 2>&1; then
-    LD_LIBRARY_PATH="${TDIR}/lib" "${TDIR}/transmission-daemon" \
-      -f -g "${TRIM_PKGVAR}/data/transmission" -w "$T115_DOWNLOAD_DIR" \
-      -p 9092 -r 127.0.0.1 -u t115 -v t115pass \
-      -P 51413 -m -o -y --utp -L 500 -l 100 -et \
-      -x "${TRIM_PKGVAR}/data/transmission/transmission.pid" \
-      >>"${TRIM_PKGVAR}/logs/transmission.log" 2>&1 &
-  fi
   rm -f "$SOCK"
   cd "$APP_DIR" || return 1
   DATA_DIR="${TRIM_PKGVAR}/data" PATH="${VENV}/bin:${PATH}" \
@@ -56,8 +44,26 @@ stop_app() {
   rm -f "$SOCK"
 }
 
+start_transmission() {
+  export T115_DOWNLOAD_DIR="${TRIM_PKGVAR}/data/downloads"
+  mkdir -p "$T115_DOWNLOAD_DIR" "${TRIM_PKGVAR}/data/transmission" "${TRIM_PKGVAR}/logs"
+  case "$(uname -m)" in aarch64|arm64) ARCH=arm ;; *) ARCH=x86 ;; esac
+  TDIR="${TRIM_APPDEST}/server/bin/${ARCH}"
+  echo "[transmission] start $(date) TDIR=$TDIR" >>"${TRIM_PKGVAR}/logs/transmission.log"
+  if [ -x "${TDIR}/transmission-daemon" ] && ! pgrep -f "transmission-daemon.*${TRIM_PKGVAR}" >/dev/null 2>&1; then
+    LD_LIBRARY_PATH="${TDIR}/lib" "${TDIR}/transmission-daemon" \
+      -f -g "${TRIM_PKGVAR}/data/transmission" -w "$T115_DOWNLOAD_DIR" \
+      -p 9092 -r 127.0.0.1 -u t115 -v t115pass \
+      -P 51413 -m -o -y --utp -L 500 -l 100 -et \
+      -x "${TRIM_PKGVAR}/data/transmission/transmission.pid" \
+      >>"${TRIM_PKGVAR}/logs/transmission.log" 2>&1 &
+  else
+    echo "[transmission] skipped executable=$([ -x "${TDIR}/transmission-daemon" ] && echo yes || echo no)" >>"${TRIM_PKGVAR}/logs/transmission.log"
+  fi
+}
+
 case "${1:-}" in
-  start) start_app ;;
+  start) start_transmission; start_app ;;
   stop) stop_app ;;
   status) status_app ;;
   *) echo "unknown" >&2; exit 1 ;;
