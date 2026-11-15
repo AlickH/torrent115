@@ -137,7 +137,7 @@ export function SettingsModal(props) {
         )}
         {localClient !== 'qbt_local' && localClient !== 'qbt_webui' ? (
           <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
-            该下载器不支持 App 内自动移动完成文件，请用外部脚本/命令处理。
+            该下载器不支持文件移动 API，将交给宿主机脚本代理执行（需要安装 t115-host-agent）。
           </Typography.Paragraph>
         ) : null}
         <Form.Item label="保存目录">

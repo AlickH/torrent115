@@ -9,13 +9,18 @@
   set_location(hashes, path)    移动任务文件（仅 qBittorrent 支持）
 """
 import json
+import os
+import shutil
+import time
 import urllib.parse
+import uuid
 
 import requests
 import requests_unixsocket
 
 SOCK = "/run/qbt.sock"
 PW_FILE = "/data/qbt_webui_password"
+HOOK_DIR = "/data/hooks"
 USER = "admin"
 
 
@@ -346,8 +351,78 @@ def has_progress(t):
     return float(t.get("progress") or 0) > 0 or is_completed(t)
 
 
+def _hook_paths():
+    pending = os.path.join(HOOK_DIR, "pending")
+    done = os.path.join(HOOK_DIR, "done")
+    os.makedirs(pending, exist_ok=True)
+    os.makedirs(done, exist_ok=True)
+    return pending, done
+
+
+def _load_json(path, default):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def _save_json(path, data):
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False)
+    os.replace(tmp, path)
+
+
+def _submit_host_move(cfg, t):
+    pending, _ = _hook_paths()
+    index_path = os.path.join(HOOK_DIR, "pending.json")
+    index = _load_json(index_path, {})
+    h = (t.get("hash") or "").lower()
+    if h in index:
+        return
+    src = (t.get("content_path") or "").strip()
+    if not src:
+        name = (t.get("name") or "").strip()
+        src = os.path.join((t.get("save_path") or "").strip(), name) if name else ""
+    dst = (cfg.get("local_done_path") or "").strip()
+    if not src or not dst:
+        return
+    job_id = uuid.uuid4().hex
+    job = {"id": job_id, "action": "move", "src": src, "dst": dst,
+           "hash": h, "client": (cfg.get("local_client") or ""), "created": int(time.time())}
+    _save_json(os.path.join(pending, job_id + ".json"), job)
+    index[h] = job_id
+    _save_json(index_path, index)
+
+
+def _poll_host_moves(cfg, client):
+    _, done = _hook_paths()
+    index_path = os.path.join(HOOK_DIR, "pending.json")
+    index = _load_json(index_path, {})
+    for h, job_id in list(index.items()):
+        result = os.path.join(done, job_id + ".json")
+        if not os.path.exists(result):
+            continue
+        data = _load_json(result, {})
+        if data.get("ok"):
+            try:
+                client.delete([h])
+            except Exception:
+                pass
+            index.pop(h, None)
+            _save_json(index_path, index)
+            try:
+                os.remove(result)
+            except Exception:
+                pass
+        else:
+            # 失败保留结果，等下一次重试前由宿主机脚本再次执行
+            pass
+
+
 def move_completed(cfg):
-    """把已完成的本地下载移动到目标目录；仅 qBittorrent 支持自动移动。"""
+    """移动已完成的本地下载：qBittorrent 走 API，aria2/Transmission 走宿主机脚本队列。"""
     if not cfg.get("local_move_enabled"):
         return 0
     done = (cfg.get("local_done_path") or "").strip()
@@ -355,6 +430,12 @@ def move_completed(cfg):
         return 0
     q = make_client(cfg)
     if not q.supports_move:
+        if not q.login():
+            return 0
+        for t in q.all():
+            if is_completed(t):
+                _submit_host_move(cfg, t)
+        _poll_host_moves(cfg, q)
         return 0
     if not q.login():
         return 0

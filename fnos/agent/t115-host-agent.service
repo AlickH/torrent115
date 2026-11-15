@@ -1,0 +1,6 @@
+[Unit]
+Description=Torrent115 host script agent
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/sbin/t115-host-agent.py

@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Torrent115 host agent every 5 seconds
+
+[Timer]
+OnBootSec=20
+OnUnitActiveSec=5
+AccuracySec=1
+
+[Install]
+WantedBy=timers.target

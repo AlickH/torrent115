@@ -60,3 +60,16 @@ bash fnos/upgrade.sh artifacts/release/Torrent115-0.2.0.fpk
 - 默认使用 host 网络，`manifest` 中 `checkport=false`；
 - 本地下载器（fnOS 下载中心 qBittorrent）默认未挂载 socket，需要手动修改 `app/docker/docker-compose.yaml` 并重新打包；
 - 目前仅构建 x86 架构包（`platform=x86`），ARM 设备需要自行准备 arm64 镜像。
+
+## 宿主机脚本代理（aria2/Transmission 移动文件）
+
+qBittorrent 通过 API 移动；aria2/Transmission 没有移动 API，App 会把移动请求写入
+`/vol1/@appdata/torrent115/data/hooks/pending/`，由宿主机代理脚本执行。
+
+安装：
+
+```bash
+bash fnos/install-agent.sh
+```
+
+代理只允许移动 `/vol1/` 下的路径，执行完成后写回 `hooks/done/`，App 再删除下载器任务。
