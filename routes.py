@@ -763,3 +763,15 @@ def api_bt_delete():
     import btdownloader
     body = request.get_json(silent=True) or {}
     return jsonify({"ok": btdownloader.delete((body.get("hash") or "").strip(), bool(body.get("files")))})
+
+
+@bp.route("/api/bt/detail")
+def api_bt_detail():
+    try:
+        import btdownloader
+        h = (request.args.get("hash") or "").strip()
+        if not h:
+            return jsonify({"ok": False, "error": "缺少 hash"}), 400
+        return jsonify({"ok": True, **btdownloader.detail(h)})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500

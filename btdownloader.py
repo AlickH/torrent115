@@ -93,3 +93,10 @@ def resume(hash_):
 def delete(hash_, delete_files=False):
     _post("/api/v2/torrents/delete", data={"hashes": _hash(hash_), "deleteFiles": "true" if delete_files else "false"})
     return True
+
+def detail(hash_):
+    h = _hash(hash_)
+    props = _get(f"/api/v2/torrents/properties?hash={h}") or {}
+    trackers = _get(f"/api/v2/torrents/trackers?hash={h}") or []
+    peers = _get(f"/api/v2/sync/torrentPeers?hash={h}") or {}
+    return {"properties": props, "trackers": trackers, "peers": peers.get("peers", {})}
