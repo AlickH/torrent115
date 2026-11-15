@@ -17,21 +17,21 @@
 
 ## 阶段 1：工程骨架
 
-- [ ] 创建 `fnos-native/` 工程目录
-- [ ] `manifest`：appname、version、install_dep_apps=python312、网关入口
-- [ ] `config/privilege`：run-as package
-- [ ] `config/resource`：数据目录声明
-- [ ] `app/ui/config`：iframe + gatewayPrefix + gatewaySocket
-- [ ] `cmd/main`：start/stop/status（gunicorn + unix socket）
-- [ ] `cmd/install_callback` / `upgrade_callback`：创建 venv 并离线安装依赖
-- [ ] `wizard/install`：管理员账号/密码
+- [x] 创建 `fnos-native/` 工程目录
+- [x] `manifest`：appname、version、install_dep_apps=python312、网关入口
+- [x] `config/privilege`：run-as package
+- [x] `config/resource`：数据目录声明
+- [x] `app/ui/config`：iframe + gatewayPrefix + gatewaySocket
+- [x] `cmd/main`：start/stop/status（gunicorn + unix socket）
+- [x] `cmd/install_callback` / `upgrade_callback`：创建 venv 并离线安装依赖
+- [x] `wizard/install`：管理员账号/密码
 - [ ] 图标
 
 ## 阶段 2：应用适配
 
-- [ ] `app.py` 抽出 `start_runtime()`，供 WSGI 和开发模式共用
-- [ ] 新增 `wsgi.py`，gunicorn 入口
-- [ ] `DATA_DIR` 改为 `TRIM_PKGVAR/data`
+- [x] `app.py` 抽出 `start_runtime()`，供 WSGI 和开发模式共用
+- [x] 新增 `wsgi.py`，gunicorn 入口
+- [x] `DATA_DIR` 改为 `TRIM_PKGVAR/data`
 - [ ] 静态目录按安装目录读取
 - [ ] 默认配置调整：bitmagnet 默认关闭、本地下载器默认不依赖 socket
 - [ ] 首次启动使用向导设置的管理员账号密码
@@ -39,17 +39,17 @@
 
 ## 阶段 3：依赖打包
 
-- [ ] `requirements-native.txt`
-- [ ] `fnos-native/build-wheelhouse.sh`（x86/arm）
+- [x] `requirements-native.txt`
+- [x] `fnos-native/build-wheelhouse.sh`（x86/arm）
 - [ ] 验证 Flask/requests/requests-unixsocket/gunicorn/psycopg2/Brotli wheel
 - [ ] 安装时 venv 创建与离线安装脚本
 
 ## 阶段 4：构建与安装测试
 
-- [ ] `fnos-native/build.sh` 生成 x86 fpk
-- [ ] 卸载 Docker 版，安装 Native 版
-- [ ] 验证应用中心状态、桌面入口、统一网关访问
-- [ ] 验证登录、搜索、追剧、设置、数据迁移
+- [x] `fnos-native/build.sh` 生成 x86 fpk
+- [x] 卸载 Docker 版，安装 Native 版
+- [x] 验证应用中心状态、桌面入口、统一网关访问
+- [x] 验证登录、搜索、追剧、设置、数据迁移
 - [ ] 验证升级流程与数据保留
 - [ ] 生成 arm64 包
 
