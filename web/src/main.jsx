@@ -49,7 +49,7 @@ function Root() {
         token: {
           colorPrimary: '#1677ff', borderRadius: 8, borderRadiusLG: 10,
           colorBgLayout: dark ? '#0b0b0b' : '#f2f2f2',
-          colorBgContainer: dark ? '#181818' : '#ffffff',
+          colorBgContainer: dark ? '#1c1c1c' : '#ffffff',
           colorBorderSecondary: dark ? '#2a2a2a' : '#ececec',
         },
       }}

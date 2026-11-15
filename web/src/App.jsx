@@ -516,25 +516,17 @@ export default function App({ mode, setMode, dark }) {
       }}
     />
   );
-  const brandMark = (
-    <Flex align="center" gap={8} style={{ padding: '6px 10px 14px' }}>
-      <svg viewBox="0 0 32 32" aria-hidden="true" style={{ width: 22, height: 22 }}><rect width="32" height="32" rx="8" fill={token.colorPrimary}/><path d="M9 7v10a7 7 0 0 0 14 0V7" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round"/><path d="M9 7h4v6H9zM19 7h4v6h-4z" fill="#fff"/></svg>
-      <Typography.Text strong style={{ fontSize: 15 }}>Torrent115</Typography.Text>
-    </Flex>
-  );
   return (
     <div className="page" style={{ minHeight: '100vh', background: bg }}>
       {!isMobile ? (
         <aside style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: 200, zIndex: 30, display: 'flex', flexDirection: 'column', padding: '10px 8px', background: bg }}>
-          {brandMark}
-          <div style={{ flex: 1, overflow: 'auto' }}>{navMenu}</div>
-          <Typography.Text type="secondary" style={{ fontSize: 11, padding: 8 }}>磁力搜索 → 115 云下载</Typography.Text>
+          <div style={{ flex: 1, overflow: 'auto', paddingTop: 6 }}>{navMenu}</div>
         </aside>
       ) : null}
       <Drawer open={navOpen} onClose={() => setNavOpen(false)} placement="left" width={250} title="Torrent115" styles={{ body: { padding: 8 } }}>
         {navMenu}
       </Drawer>
-      <div className="page-inner" style={isMobile ? { padding: 12, height: '100vh', overflow: 'auto' } : { marginLeft: 208, marginRight: 8, marginTop: 8, marginBottom: 8, height: 'calc(100vh - 16px)', overflow: 'auto', maxWidth: 'none', background: token.colorBgContainer, borderRadius: 12, padding: 20, boxShadow: '0 1px 2px rgba(0,0,0,.04)' }}>
+      <div className="page-inner" style={isMobile ? { padding: 12, height: '100vh', overflow: 'auto' } : { marginLeft: 208, marginRight: 8, marginTop: 8, marginBottom: 8, height: 'calc(100vh - 16px)', overflow: 'auto', maxWidth: 'none', background: token.colorBgContainer, borderRadius: 12, padding: 20, boxShadow: '0 1px 2px rgba(0,0,0,.06)', border: `1px solid ${token.colorBorderSecondary}` }}>
         {track.auto?.running ? (
           <div style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 1000, background: token.colorBgContainer, border: `1px solid ${token.colorBorderSecondary}`, borderRadius: 24, padding: '8px 16px', boxShadow: '0 6px 20px rgba(0,0,0,.12)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Spin size="small" />
