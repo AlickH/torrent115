@@ -674,7 +674,11 @@ export default function App({ mode, setMode, dark }) {
             locale={{ emptyText: <Empty description={loading ? '搜索中…' : '还没有结果，先搜索吧'} /> }}
           />
         </div>
-        </>) : view === 'auto' ? (
+        </>) : view === 'bt' ? (
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <Suspense fallback={null}><BtDownloads /></Suspense>
+          </div>
+        ) : view === 'auto' ? (
           <div style={{ flex: 1, minHeight: 0 }}>
             <Suspense fallback={null}><TrackingModals {...track} cfg={cfg} token={token} inline /></Suspense>
           </div>
