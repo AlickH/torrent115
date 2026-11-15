@@ -14,6 +14,19 @@ start_app() {
   mkdir -p "${TRIM_PKGVAR}/logs"
   if [ -f "${TRIM_PKGVAR}/init.env" ]; then set -a; . "${TRIM_PKGVAR}/init.env"; set +a; fi
   PORT="${T115_WEB_PORT:-8099}"
+  export T115_DOWNLOAD_DIR="${TRIM_PKGVAR}/data/downloads"
+  mkdir -p "$T115_DOWNLOAD_DIR" "${TRIM_PKGVAR}/data/transmission"
+  case "$(uname -m)" in aarch64|arm64) ARCH=arm ;; *) ARCH=x86 ;; esac
+  TDIR="${TRIM_APPDEST}/server/bin/${ARCH}"
+  if [ -x "${TDIR}/transmission-daemon" ] && ! pgrep -f "transmission-daemon.*${TRIM_PKGVAR}" >/dev/null 2>&1; then
+    LD_LIBRARY_PATH="${TDIR}/lib" "${TDIR}/transmission-daemon" \
+      --config-dir "${TRIM_PKGVAR}/data/transmission" \
+      --download-dir "$T115_DOWNLOAD_DIR" \
+      --rpc-bind-address 127.0.0.1 --rpc-port 9092 \
+      --rpc-username t115 --rpc-password t115pass --rpc-whitelist 127.0.0.1 \
+      --peer-port 51413 --port-forwarding-enabled --dht-enabled --lpd-enabled --utp-enabled \
+      >>"${TRIM_PKGVAR}/logs/transmission.log" 2>&1 &
+  fi
   rm -f "$SOCK"
   cd "$APP_DIR" || return 1
   DATA_DIR="${TRIM_PKGVAR}/data" PATH="${VENV}/bin:${PATH}" \

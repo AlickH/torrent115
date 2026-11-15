@@ -30,7 +30,7 @@ def _call(method, arguments=None):
 
 
 def add_magnet(cfg, magnet):
-    path = (cfg.get("local_save_path") or os.environ.get("T115_DOWNLOAD_DIR") or "/data/downloads").strip()
+    path = (os.environ.get("T115_DOWNLOAD_DIR") or cfg.get("local_save_path") or "/data/downloads").strip()
     os.makedirs(path, exist_ok=True)
     _call("torrent-add", {"filename": magnet, "download-dir": path, "paused": False})
     return True
