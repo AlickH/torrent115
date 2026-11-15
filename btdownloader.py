@@ -3,6 +3,7 @@
 import os
 import threading
 import requests
+import requests_unixsocket
 
 SOCK = os.environ.get("T115_QBT_SOCK", "/data/qbt.sock")
 BASE = "http://localhost"
