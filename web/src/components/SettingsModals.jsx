@@ -15,6 +15,8 @@ export function SettingsModal(props) {
     maxEpisodes, setMaxEpisodes, taskTimeout, setTaskTimeout, waitTimeout, setWaitTimeout, drivembyEnabled, setDrivembyEnabled,
     localSavePath, setLocalSavePath, localMoveEnabled, setLocalMoveEnabled, localDonePath, setLocalDonePath,
     localClient, setLocalClient, localQbtUrl, setLocalQbtUrl, localQbtUser, setLocalQbtUser, localQbtPassword, setLocalQbtPassword, localQbtSock, setLocalQbtSock,
+    aria2Url, setAria2Url, aria2Secret, setAria2Secret,
+    transmissionUrl, setTransmissionUrl, transmissionUser, setTransmissionUser, transmissionPassword, setTransmissionPassword,
     autoForm, setAutoForm, auto, traktToken, setTraktToken, revealTrakt,
     startTraktOauth, traktOauthError,
     aiPresets, newAiPreset, editAiPreset, deleteAiPreset,
@@ -109,6 +111,8 @@ export function SettingsModal(props) {
           <Select value={localClient} onChange={setLocalClient} options={[
             { value: 'qbt_local', label: 'fnOS 下载中心（qBittorrent unix socket）' },
             { value: 'qbt_webui', label: 'qBittorrent WebUI（TCP）' },
+            { value: 'aria2', label: 'aria2 JSON-RPC' },
+            { value: 'transmission', label: 'Transmission RPC' },
           ]} />
         </Form.Item>
         {localClient === 'qbt_webui' ? (
@@ -117,9 +121,25 @@ export function SettingsModal(props) {
             <Form.Item label="用户名"><Input value={localQbtUser} onChange={e => setLocalQbtUser(e.target.value)} /></Form.Item>
             <Form.Item label="密码"><Input.Password value={localQbtPassword} onChange={e => setLocalQbtPassword(e.target.value)} placeholder="qBittorrent WebUI 密码" /></Form.Item>
           </>
+        ) : localClient === 'aria2' ? (
+          <>
+            <Form.Item label="JSON-RPC 地址"><Input value={aria2Url} onChange={e => setAria2Url(e.target.value)} placeholder="http://127.0.0.1:6800/jsonrpc" /></Form.Item>
+            <Form.Item label="RPC Secret（可选）"><Input.Password value={aria2Secret} onChange={e => setAria2Secret(e.target.value)} /></Form.Item>
+          </>
+        ) : localClient === 'transmission' ? (
+          <>
+            <Form.Item label="RPC 地址"><Input value={transmissionUrl} onChange={e => setTransmissionUrl(e.target.value)} placeholder="http://127.0.0.1:9091/transmission/rpc" /></Form.Item>
+            <Form.Item label="用户名（可选）"><Input value={transmissionUser} onChange={e => setTransmissionUser(e.target.value)} /></Form.Item>
+            <Form.Item label="密码（可选）"><Input.Password value={transmissionPassword} onChange={e => setTransmissionPassword(e.target.value)} /></Form.Item>
+          </>
         ) : (
           <Form.Item label="qBittorrent socket 路径"><Input value={localQbtSock} onChange={e => setLocalQbtSock(e.target.value)} placeholder="/run/qbt.sock" /></Form.Item>
         )}
+        {localClient !== 'qbt_local' && localClient !== 'qbt_webui' ? (
+          <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
+            该下载器不支持 App 内自动移动完成文件，请用外部脚本/命令处理。
+          </Typography.Paragraph>
+        ) : null}
         <Form.Item label="保存目录">
           <Input value={localSavePath} onChange={e => setLocalSavePath(e.target.value)} placeholder="/vol1/1000/Downloads" />
         </Form.Item>

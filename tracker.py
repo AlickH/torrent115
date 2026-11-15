@@ -16,7 +16,7 @@ _LOCAL = {"client": None}
 
 def _local_client(cfg=None):
     try:
-        c = localtorrent.LocalQbt(cfg)
+        c = localtorrent.make_client(cfg)
         return c if c.login() else None
     except Exception:
         return None

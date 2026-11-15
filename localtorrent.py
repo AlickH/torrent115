@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
-"""本地 qBittorrent（fnOS 下载中心）客户端：通过 unix socket 操作。"""
-import os
+"""本地下载器客户端：qBittorrent / aria2 / Transmission。
+
+统一接口：
+  add_magnet(magnet, savepath)  添加磁力
+  torrents(hashes)              查询任务（key 为 infohash）
+  all()                         全部任务
+  delete(hashes, delete_files)  删除任务
+  set_location(hashes, path)    移动任务文件（仅 qBittorrent 支持）
+"""
+import json
 import urllib.parse
 
 import requests
@@ -11,19 +19,51 @@ PW_FILE = "/data/qbt_webui_password"
 USER = "admin"
 
 
-class LocalQbt:
+class BaseClient:
+    supports_move = False
+
     def __init__(self, cfg=None):
-        cfg = cfg or {}
-        self.mode = cfg.get("local_client") or "qbt_local"
+        self.cfg = cfg or {}
         self.ok = False
+
+    def login(self):
+        return False
+
+    def add_magnet(self, magnet, savepath=None):
+        raise NotImplementedError
+
+    def torrents(self, hashes):
+        return {}
+
+    def all(self):
+        return list(self.torrents([]).values())
+
+    def delete(self, hashes, delete_files=False):
+        return False
+
+    def set_location(self, hashes, location):
+        return False
+
+    def add_tags(self, hashes, tags):
+        return False
+
+
+class LocalQbt(BaseClient):
+    """qBittorrent：fnOS 下载中心 unix socket 或 WebUI TCP。"""
+
+    supports_move = True
+
+    def __init__(self, cfg=None):
+        super().__init__(cfg)
+        self.mode = self.cfg.get("local_client") or "qbt_local"
         if self.mode == "qbt_webui":
             self.session = requests.Session()
-            self.base = (cfg.get("local_qbt_url") or "http://127.0.0.1:8080").rstrip("/")
-            self.user = cfg.get("local_qbt_user") or USER
-            self.password = cfg.get("local_qbt_password") or ""
+            self.base = (self.cfg.get("local_qbt_url") or "http://127.0.0.1:8080").rstrip("/")
+            self.user = self.cfg.get("local_qbt_user") or USER
+            self.password = self.cfg.get("local_qbt_password") or ""
         else:
             self.session = requests_unixsocket.Session()
-            sock = cfg.get("local_qbt_sock") or SOCK
+            sock = self.cfg.get("local_qbt_sock") or SOCK
             self.base = "http+unix://" + urllib.parse.quote(sock, safe="")
             self.user = USER
             self.password = None
@@ -48,60 +88,256 @@ class LocalQbt:
     def _post(self, path, **data):
         return self.session.post(self.base + path, data=data, timeout=15)
 
-    def add_magnet(self, magnet, savepath="/vol1/1000/Downloads"):
+    def _ready(self):
         if not self.ok and not self.login():
             raise RuntimeError("本地下载器未就绪")
-        r = self._post("/api/v2/torrents/add", urls=magnet, savepath=savepath)
+
+    def add_magnet(self, magnet, savepath=None):
+        self._ready()
+        r = self._post("/api/v2/torrents/add", urls=magnet, savepath=savepath or "")
         if r.status_code not in (200, 201):
             raise RuntimeError(f"本地下载器添加失败: HTTP {r.status_code}")
         return True
 
-    def torrents(self, hashes):
-        if not self.ok and not self.login():
-            raise RuntimeError("本地下载器未就绪")
-        hs = "|".join(h for h in hashes if h)
+    def _torrents(self, hashes=None):
+        self._ready()
+        hs = "|".join(h for h in (hashes or []) if h)
         r = self._get("/api/v2/torrents/info", hashes=hs)
-        if r.status_code != 200:
-            return {}
-        out = {}
-        for t in r.json() or []:
-            out[(t.get("hash") or "").lower()] = t
-        return out
-
-    def all(self):
-        if not self.ok and not self.login():
-            raise RuntimeError("本地下载器未就绪")
-        r = self._get("/api/v2/torrents/info")
         if r.status_code != 200:
             return []
         return r.json() or []
 
+    def torrents(self, hashes):
+        return {(t.get("hash") or "").lower(): t for t in self._torrents(hashes)}
+
+    def all(self):
+        return self._torrents(None)
+
     def set_location(self, hashes, location):
-        if not self.ok and not self.login():
-            raise RuntimeError("本地下载器未就绪")
+        self._ready()
         hs = "|".join(h for h in hashes if h)
         r = self._post("/api/v2/torrents/setLocation", hashes=hs, location=location)
         return r.status_code == 200
 
     def add_tags(self, hashes, tags):
-        if not self.ok and not self.login():
-            raise RuntimeError("本地下载器未就绪")
+        self._ready()
         hs = "|".join(h for h in hashes if h)
         r = self._post("/api/v2/torrents/addTags", hashes=hs, tags=tags)
         return r.status_code == 200
 
     def delete(self, hashes, delete_files=False):
-        if not self.ok and not self.login():
-            raise RuntimeError("本地下载器未就绪")
+        self._ready()
         hs = "|".join(h for h in hashes if h)
         r = self._post("/api/v2/torrents/delete", hashes=hs,
                        deleteFiles="true" if delete_files else "false")
         return r.status_code == 200
 
 
+def _progress(done, total):
+    try:
+        return float(done) / float(total) if float(total) > 0 else 0.0
+    except Exception:
+        return 0.0
+
+
+class Aria2Client(BaseClient):
+    """aria2 JSON-RPC。"""
+
+    def __init__(self, cfg=None):
+        super().__init__(cfg)
+        self.url = self.cfg.get("aria2_url") or "http://127.0.0.1:6800/jsonrpc"
+        self.secret = self.cfg.get("aria2_secret") or ""
+
+    def _rpc(self, method, params=None):
+        p = ([f"token:{self.secret}"] if self.secret else []) + list(params or [])
+        r = requests.post(self.url, json={"jsonrpc": "2.0", "id": "t115", "method": method, "params": p}, timeout=10)
+        r.raise_for_status()
+        d = r.json()
+        if d.get("error"):
+            raise RuntimeError(d["error"].get("message") or "aria2 RPC 错误")
+        return d.get("result")
+
+    def login(self):
+        try:
+            self._rpc("aria2.getVersion")
+            self.ok = True
+        except Exception:
+            self.ok = False
+        return self.ok
+
+    def add_magnet(self, magnet, savepath=None):
+        if not self.ok and not self.login():
+            raise RuntimeError("aria2 未就绪")
+        opts = {"dir": savepath} if savepath else {}
+        self._rpc("aria2.addUri", [[magnet], opts])
+        return True
+
+    def _status(self, gid):
+        return self._rpc("aria2.tellStatus", [gid, [
+            "gid", "status", "totalLength", "completedLength", "downloadSpeed",
+            "infoHash", "dir", "files", "bittorrent", "errorMessage",
+        ]])
+
+    def _gids(self):
+        out = []
+        for method in ("aria2.tellActive", "aria2.tellWaiting", "aria2.tellStopped"):
+            args = [] if method == "aria2.tellActive" else [0, 1000]
+            try:
+                out.extend(self._rpc(method, args) or [])
+            except Exception:
+                pass
+        return out
+
+    def torrents(self, hashes):
+        if not self.ok and not self.login():
+            return {}
+        wanted = {(h or "").lower() for h in (hashes or []) if h}
+        out = {}
+        for item in self._gids():
+            gid = item.get("gid")
+            if not gid:
+                continue
+            try:
+                st = self._status(gid)
+            except Exception:
+                continue
+            h = (st.get("infoHash") or "").lower()
+            if not h or (wanted and h not in wanted):
+                continue
+            files = st.get("files") or []
+            name = ((st.get("bittorrent") or {}).get("info") or {}).get("name") or ""
+            if not name and files:
+                name = (files[0].get("path") or "").split("/")[-1]
+            state = st.get("status") or ""
+            out[h] = {
+                "hash": h,
+                "name": name,
+                "progress": _progress(st.get("completedLength"), st.get("totalLength")),
+                "state": {"active": "downloading", "waiting": "queued",
+                          "paused": "paused", "complete": "uploading",
+                          "error": "error", "removed": "removed"}.get(state, state),
+                "save_path": st.get("dir") or "",
+                "content_path": (files[0].get("path") if files else ""),
+                "size": int(st.get("totalLength") or 0),
+                "tags": "",
+            }
+        return out
+
+    def delete(self, hashes, delete_files=False):
+        if not self.ok and not self.login():
+            return False
+        for h in hashes:
+            for item in self._gids():
+                if (item.get("infoHash") or "").lower() != (h or "").lower():
+                    continue
+                gid = item.get("gid")
+                try:
+                    self._rpc("aria2.remove", [gid])
+                except Exception:
+                    pass
+                try:
+                    self._rpc("aria2.removeDownloadResult", [gid])
+                except Exception:
+                    pass
+        return True
+
+
+class TransmissionClient(BaseClient):
+    """Transmission RPC。"""
+
+    def __init__(self, cfg=None):
+        super().__init__(cfg)
+        self.url = self.cfg.get("transmission_url") or "http://127.0.0.1:9091/transmission/rpc"
+        self.user = self.cfg.get("transmission_user") or ""
+        self.password = self.cfg.get("transmission_password") or ""
+        self.session = requests.Session()
+        self.session_id = ""
+        if self.user:
+            self.session.auth = (self.user, self.password)
+
+    def _post(self, payload):
+        headers = {"X-Transmission-Session-Id": self.session_id} if self.session_id else {}
+        r = self.session.post(self.url, json=payload, headers=headers, timeout=10)
+        if r.status_code == 409:
+            self.session_id = r.headers.get("X-Transmission-Session-Id", "")
+            headers = {"X-Transmission-Session-Id": self.session_id}
+            r = self.session.post(self.url, json=payload, headers=headers, timeout=10)
+        r.raise_for_status()
+        d = r.json()
+        if d.get("result") != "success":
+            raise RuntimeError(d.get("result") or "Transmission RPC 错误")
+        return d.get("arguments") or {}
+
+    def login(self):
+        try:
+            self._post({"method": "session-get"})
+            self.ok = True
+        except Exception:
+            self.ok = False
+        return self.ok
+
+    def add_magnet(self, magnet, savepath=None):
+        if not self.ok and not self.login():
+            raise RuntimeError("Transmission 未就绪")
+        args = {"filename": magnet}
+        if savepath:
+            args["download-dir"] = savepath
+        self._post({"method": "torrent-add", "arguments": args})
+        return True
+
+    def torrents(self, hashes):
+        if not self.ok and not self.login():
+            return {}
+        args = self._post({"method": "torrent-get", "arguments": {"fields": [
+            "id", "name", "hashString", "percentDone", "status", "downloadDir",
+            "totalSize", "rateDownload", "labels",
+        ]}})
+        wanted = {(h or "").lower() for h in (hashes or []) if h}
+        out = {}
+        for t in args.get("torrents") or []:
+            h = (t.get("hashString") or "").lower()
+            if not h or (wanted and h not in wanted):
+                continue
+            st = t.get("status")
+            out[h] = {
+                "hash": h,
+                "name": t.get("name") or "",
+                "progress": float(t.get("percentDone") or 0),
+                "state": {0: "paused", 1: "checking", 2: "downloading",
+                          3: "uploading", 4: "queued", 5: "queued", 6: "downloading"}.get(st, str(st)),
+                "save_path": t.get("downloadDir") or "",
+                "content_path": "",
+                "size": int(t.get("totalSize") or 0),
+                "tags": ",".join(t.get("labels") or []),
+            }
+        return out
+
+    def delete(self, hashes, delete_files=False):
+        if not self.ok and not self.login():
+            return False
+        args = self._post({"method": "torrent-get", "arguments": {"fields": ["id", "hashString"]}})
+        ids = [t.get("id") for t in (args.get("torrents") or [])
+               if (t.get("hashString") or "").lower() in {(h or "").lower() for h in hashes}]
+        if ids:
+            self._post({"method": "torrent-remove",
+                        "arguments": {"ids": ids, "delete-local-data": bool(delete_files)}})
+        return True
+
+
+def make_client(cfg=None):
+    mode = (cfg or {}).get("local_client") or "qbt_local"
+    if mode == "aria2":
+        return Aria2Client(cfg)
+    if mode == "transmission":
+        return TransmissionClient(cfg)
+    return LocalQbt(cfg)
+
+
 def is_completed(t):
-    return bool(t) and (float(t.get("progress") or 0) >= 0.999 or
-                        t.get("state") in ("uploading", "stalledUP", "pausedUP", "queuedUP", "forcedUP"))
+    if not t:
+        return False
+    return (float(t.get("progress") or 0) >= 0.999 or
+            t.get("state") in ("uploading", "stalledUP", "pausedUP", "queuedUP", "forcedUP"))
 
 
 def has_progress(t):
@@ -111,13 +347,15 @@ def has_progress(t):
 
 
 def move_completed(cfg):
-    """把已完成的本地下载移动到配置的目标目录（qbt setLocation），返回移动数量。"""
+    """把已完成的本地下载移动到目标目录；仅 qBittorrent 支持自动移动。"""
     if not cfg.get("local_move_enabled"):
         return 0
     done = (cfg.get("local_done_path") or "").strip()
     if not done:
         return 0
-    q = LocalQbt(cfg)
+    q = make_client(cfg)
+    if not q.supports_move:
+        return 0
     if not q.login():
         return 0
     moved = 0

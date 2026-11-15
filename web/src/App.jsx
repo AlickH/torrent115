@@ -136,6 +136,11 @@ export default function App({ mode, setMode, dark }) {
   const [localQbtUser, setLocalQbtUser] = useState('admin');
   const [localQbtPassword, setLocalQbtPassword] = useState('');
   const [localQbtSock, setLocalQbtSock] = useState('/run/qbt.sock');
+  const [aria2Url, setAria2Url] = useState('http://127.0.0.1:6800/jsonrpc');
+  const [aria2Secret, setAria2Secret] = useState('');
+  const [transmissionUrl, setTransmissionUrl] = useState('http://127.0.0.1:9091/transmission/rpc');
+  const [transmissionUser, setTransmissionUser] = useState('');
+  const [transmissionPassword, setTransmissionPassword] = useState('');
   const [accUser, setAccUser] = useState('');
   const [accOld, setAccOld] = useState('');
   const [accNew, setAccNew] = useState('');
@@ -450,7 +455,12 @@ export default function App({ mode, setMode, dark }) {
     if (cfg.local_qbt_user !== undefined) setLocalQbtUser(cfg.local_qbt_user || '');
     if (cfg.local_qbt_password !== undefined) setLocalQbtPassword(cfg.local_qbt_password || '');
     if (cfg.local_qbt_sock !== undefined) setLocalQbtSock(cfg.local_qbt_sock || '');
-  }, [cfg?.local_save_path, cfg?.local_move_enabled, cfg?.local_done_path, cfg?.local_client, cfg?.local_qbt_url, cfg?.local_qbt_user, cfg?.local_qbt_password, cfg?.local_qbt_sock]);
+    if (cfg.aria2_url !== undefined) setAria2Url(cfg.aria2_url || '');
+    if (cfg.aria2_secret !== undefined) setAria2Secret(cfg.aria2_secret || '');
+    if (cfg.transmission_url !== undefined) setTransmissionUrl(cfg.transmission_url || '');
+    if (cfg.transmission_user !== undefined) setTransmissionUser(cfg.transmission_user || '');
+    if (cfg.transmission_password !== undefined) setTransmissionPassword(cfg.transmission_password || '');
+  }, [cfg?.local_save_path, cfg?.local_move_enabled, cfg?.local_done_path, cfg?.local_client, cfg?.local_qbt_url, cfg?.local_qbt_user, cfg?.local_qbt_password, cfg?.local_qbt_sock, cfg?.aria2_url, cfg?.aria2_secret, cfg?.transmission_url, cfg?.transmission_user, cfg?.transmission_password]);
 
   // ---- settings helpers ----
   const openSettings = () => {
@@ -477,6 +487,11 @@ export default function App({ mode, setMode, dark }) {
       local_qbt_user: localQbtUser,
       local_qbt_password: localQbtPassword,
       local_qbt_sock: localQbtSock,
+      aria2_url: aria2Url,
+      aria2_secret: aria2Secret,
+      transmission_url: transmissionUrl,
+      transmission_user: transmissionUser,
+      transmission_password: transmissionPassword,
     };
     if (tmdbText) body.tmdb_api_key = tmdbText;
     if (cookieText) body.p115_cookie = cookieText;
@@ -660,6 +675,11 @@ export default function App({ mode, setMode, dark }) {
               localQbtUser={localQbtUser} setLocalQbtUser={setLocalQbtUser}
               localQbtPassword={localQbtPassword} setLocalQbtPassword={setLocalQbtPassword}
               localQbtSock={localQbtSock} setLocalQbtSock={setLocalQbtSock}
+              aria2Url={aria2Url} setAria2Url={setAria2Url}
+              aria2Secret={aria2Secret} setAria2Secret={setAria2Secret}
+              transmissionUrl={transmissionUrl} setTransmissionUrl={setTransmissionUrl}
+              transmissionUser={transmissionUser} setTransmissionUser={setTransmissionUser}
+              transmissionPassword={transmissionPassword} setTransmissionPassword={setTransmissionPassword}
             /></Suspense>
           </div>
         ) : null}
@@ -731,6 +751,11 @@ export default function App({ mode, setMode, dark }) {
           localQbtUser={localQbtUser} setLocalQbtUser={setLocalQbtUser}
           localQbtPassword={localQbtPassword} setLocalQbtPassword={setLocalQbtPassword}
           localQbtSock={localQbtSock} setLocalQbtSock={setLocalQbtSock}
+          aria2Url={aria2Url} setAria2Url={setAria2Url}
+          aria2Secret={aria2Secret} setAria2Secret={setAria2Secret}
+          transmissionUrl={transmissionUrl} setTransmissionUrl={setTransmissionUrl}
+          transmissionUser={transmissionUser} setTransmissionUser={setTransmissionUser}
+          transmissionPassword={transmissionPassword} setTransmissionPassword={setTransmissionPassword}
         />
         </Suspense>
       ) : null}
