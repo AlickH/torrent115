@@ -204,6 +204,10 @@ export default function App({ mode, setMode, dark }) {
     const ac = new AbortController();
     searchAbort.current = ac;
     const tasks = [];
+    if (sources.jackett && (!cfg?.jackett_url || !cfg?.jackett_api_key)) {
+      message.warning('请先在设置中填写 Jackett 地址和 API Key');
+      return;
+    }
     if (sources.pansou && cfg?.pansou_url) tasks.push('pansou');
     SITE_SOURCES.forEach(k => { if (!sources[k]) return; if (k === 'bitmagnet' && !cfg?.bitmagnet_url) return; if (k === 'jackett' && !cfg?.jackett_url) return; tasks.push(k); });
     if (!tasks.length) { message.warning('至少选择一个搜索源'); return; }
@@ -452,7 +456,7 @@ export default function App({ mode, setMode, dark }) {
         {cfg?.pansou_url ? (
           <Checkbox checked={sources.pansou} onChange={e => setSources({ ...sources, pansou: e.target.checked })}>PanSou</Checkbox>
         ) : null}
-        {SITE_SOURCES.filter(k => k !== 'bitmagnet' || !!cfg?.bitmagnet_url).map(k => (
+        {SITE_SOURCES.filter(k => (k !== 'bitmagnet' || !!cfg?.bitmagnet_url) && (k !== 'jackett' || (!!cfg?.jackett_url && !!cfg?.jackett_api_key))).map(k => (
           <Checkbox key={k} checked={!!sources[k]} onChange={e => setSources({ ...sources, [k]: e.target.checked })}>
             {SOURCE_LABELS[k]}
           </Checkbox>
