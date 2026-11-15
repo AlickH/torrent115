@@ -1,0 +1,17 @@
+{
+  "name": "torrent115-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {"build": "vite build", "dev": "vite"},
+  "dependencies": {
+    "antd": "^5.22.0",
+    "@ant-design/icons": "^5.5.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.3",
+    "vite": "^5.4.10"
+  }
+}

@@ -1,0 +1,13 @@
+services:
+  torrent115:
+    build: .
+    image: torrent115:latest
+    container_name: torrent115
+    network_mode: host
+    volumes:
+      - ./data:/data
+      # 可选：挂载 fnOS 下载中心的 qBittorrent socket 后启用本地下载器
+      # - /usr/trim/var/downloadcenter/1000/qbt.sock:/run/qbt.sock
+    environment:
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
