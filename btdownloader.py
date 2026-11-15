@@ -13,20 +13,40 @@ _handles = {}
 
 def _get_session():
     global _session
+    cfg = {}
+    port = 6881
     with _lock:
         if _session is None:
             settings = {
-                "listen_interfaces": "0.0.0.0:6881,[::]:6881",
+                "listen_interfaces": f"0.0.0.0:{port},[::]:{port}",
                 "enable_dht": True,
                 "enable_lsd": True,
                 "enable_upnp": True,
                 "enable_natpmp": True,
                 "alert_mask": lt.alert.category_t.error_notification | lt.alert.category_t.status_notification,
+                "connections_limit": 500,
+                "connection_speed": 200,
+                "peer_connect_timeout": 5,
+                "request_timeout": 10,
+                "max_failcount": 3,
+                "announce_to_all_trackers": True,
+                "announce_to_all_tiers": True,
+                "prefer_udp_trackers": True,
+                "in_encryption": "1",
+                "out_encryption": "1",
+                "allow_multiple_connections_per_ip": True,
+                "aio_threads": 8,
+                "hashing_threads": 2,
+                "utp_connect_timeout": 5,
                 "download_rate_limit": 0,
                 "upload_rate_limit": 0,
+                "dht_bootstrap_nodes": "router.bittorrent.com:6881,dht.transmissionbt.com:6881,router.utorrent.com:6881,dht.libtorrent.org:25401",
             }
             _session = lt.session(settings)
             _session.start_dht()
+            _session.start_lsd()
+            _session.start_upnp()
+            _session.start_natpmp()
         return _session
 
 
