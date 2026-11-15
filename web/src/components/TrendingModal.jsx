@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button, Empty, Modal, Spin, Tabs, Tag, theme, Tooltip } from 'antd';
 import { api, posterUrl } from '../api.js';
 
-export default function TrendingModal({ open, onClose, track, onDirectSearch }) {
+export default function TrendingModal({ open, onClose, track, onDirectSearch, inline }) {
   const { token } = theme.useToken();
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
@@ -42,8 +42,8 @@ export default function TrendingModal({ open, onClose, track, onDirectSearch }) 
     onClose();
   };
 
-  return (
-    <Modal open={open} onCancel={onClose} footer={null} width={920} title="TMDB 最近热映">
+  const body = (
+    <>
       <Tabs
         activeKey={tab}
         onChange={setTab}
@@ -57,7 +57,7 @@ export default function TrendingModal({ open, onClose, track, onDirectSearch }) 
       ) : !list.length ? (
         <Empty description="暂无数据，检查 TMDB 配置或代理" />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12, maxHeight: '60vh', overflow: 'auto', padding: 4 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12, maxHeight: inline ? 'none' : '60vh', overflow: inline ? 'visible' : 'auto', padding: 4 }}>
           {list.map(it => (
             <div key={it.media_type + it.tmdb_id} style={{ border: `1px solid ${token.colorBorderSecondary}`, borderRadius: 10, overflow: 'hidden', background: token.colorBgContainer }}>
               <div style={{ aspectRatio: '2/3', background: token.colorFillTertiary }}>
@@ -89,6 +89,19 @@ export default function TrendingModal({ open, onClose, track, onDirectSearch }) 
           ) : null}
         </div>
       )}
+    </>
+  );
+  if (inline) {
+    return (
+      <div style={{ height: '100%', overflow: 'auto', padding: '12px 20px 20px' }}>
+        <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 12 }}>TMDB 最近热映</div>
+        {body}
+      </div>
+    );
+  }
+  return (
+    <Modal open={open} onCancel={onClose} footer={null} width={920} title="TMDB 最近热映">
+      {body}
     </Modal>
   );
 }

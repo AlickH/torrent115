@@ -65,6 +65,7 @@ export default function TrackingModals(p) {
     traktOauthOpen,
     traktRedirectUri,
     token,
+    inline,
   } = p;
   const logRef = useRef(null);
   const logCount = (auto?.log || []).length;
@@ -76,15 +77,8 @@ export default function TrackingModals(p) {
     const el = logRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [logCount]);
-  return (
+  const autoBody = (
     <>
-            <Modal
-              open={autoOpen}
-              onCancel={() => setAutoOpen(false)}
-              title="追剧 / 想看电影"
-              width={920}
-              footer={null}
-            >
               <Flex justify="space-between" align="center" wrap="wrap" gap={8} style={{ marginBottom: 12 }}>
                 <Tabs
                   activeKey={autoTab}
@@ -102,7 +96,7 @@ export default function TrackingModals(p) {
                   <Button icon={<CheckCircleOutlined />} onClick={openDone}>已完成</Button>
                 </Space>
               </Flex>
-              <div style={{ maxHeight: '54vh', overflow: 'auto', padding: 4 }}>
+              <div style={{ maxHeight: inline ? 'none' : '54vh', overflow: inline ? 'visible' : 'auto', padding: 4 }}>
                 {['tv', 'movie'].map(tab => {
                   const list = autoShows.filter(x => (x.media_type || 'tv') === tab);
                   return (
@@ -159,7 +153,27 @@ export default function TrackingModals(p) {
                   ),
                 }]}
               />
-            </Modal>
+            
+    </>
+  );
+  return (
+    <>
+            {inline ? (
+              <div style={{ height: '100%', overflow: 'auto', padding: '12px 20px' }}>
+                <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 12 }}>追剧 / 想看电影</div>
+                {autoBody}
+              </div>
+            ) : (
+              <Modal
+                open={autoOpen}
+                onCancel={() => setAutoOpen(false)}
+                title="追剧 / 想看电影"
+                width={920}
+                footer={null}
+              >
+                {autoBody}
+              </Modal>
+            )}
       
             <Modal
               open={addOpen}

@@ -87,6 +87,7 @@ export default function App({ mode, setMode, dark }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [trendingOpen, setTrendingOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  const [view, setView] = useState('search');
   const [accountOpen, setAccountOpen] = useState(false);
   const [srcOpen, setSrcOpen] = useState(false);
   const [tabOverflow, setTabOverflow] = useState(false);
@@ -406,7 +407,7 @@ export default function App({ mode, setMode, dark }) {
   const cycleTheme = () => setMode(mode === 'auto' ? 'light' : mode === 'light' ? 'dark' : 'auto');
 
   const sourcePanel = (
-    <div style={{ width: isMobile ? '100%' : 520, padding: '4px 2px' }}>
+    <div style={{ width: '100%', maxWidth: '100%', padding: '4px 2px', boxSizing: 'border-box' }}>
       <Typography.Text type="secondary">搜索源</Typography.Text>
       <Flex wrap gap={12} style={{ margin: '8px 0 12px' }}>
         {cfg?.pansou_url ? (
@@ -499,20 +500,15 @@ export default function App({ mode, setMode, dark }) {
         { key: 'search', icon: <SearchOutlined />, label: '搜索' },
         { key: 'auto', icon: <CalendarOutlined />, label: '追剧自动转存' },
         { key: 'trending', icon: <FireOutlined />, label: 'TMDB 最近热映' },
-        { key: 'sources', icon: <SlidersOutlined />, label: '搜索源与选项' },
         { type: 'divider' },
         { key: 'settings', icon: <SettingOutlined />, label: '设置' },
-        { key: 'theme', icon: themeIcon, label: themeTip },
         { key: 'logout', icon: <LogoutOutlined />, label: '退出登录' },
       ]}
+      selectedKeys={[view]}
       onClick={({ key }) => {
         setNavOpen(false);
-        if (key === 'auto') track.openAuto();
-        else if (key === 'trending') setTrendingOpen(true);
-        else if (key === 'sources') setSrcOpen(true);
-        else if (key === 'settings') openSettings();
-        else if (key === 'theme') cycleTheme();
-        else if (key === 'logout') window.location.href = '/logout';
+        if (key === 'logout') window.location.href = '/logout';
+        else setView(key);
       }}
     />
   );
@@ -533,10 +529,13 @@ export default function App({ mode, setMode, dark }) {
             <span style={{ fontSize: 13 }}>自动任务运行中…</span>
           </div>
         ) : null}
+        {view === 'search' ? (<>
         <div ref={topRef} className="topbar" style={{ flexShrink: 0, background: token.colorBgContainer, padding: isMobile ? '10px 12px 0' : '12px 20px 0' }}>
           <div className="pad-x" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {isMobile ? <Button type="text" icon={<MenuOutlined />} onClick={() => setNavOpen(true)} /> : null}
             <Typography.Text strong style={{ fontSize: 17 }}>磁力搜索</Typography.Text>
+            <div style={{ flex: 1 }} />
+            <Tooltip title="搜索源与选项"><Button type="text" icon={<SlidersOutlined />} onClick={() => setSrcOpen(true)} /></Tooltip>
           </div>
           {cfg?.is_default_auth ? (
             <div style={{ marginTop: 8, padding: '6px 12px', background: token.colorWarningBg, borderRadius: token.borderRadius }}>
@@ -607,6 +606,28 @@ export default function App({ mode, setMode, dark }) {
             locale={{ emptyText: <Empty description={loading ? '搜索中…' : '还没有结果，先搜索吧'} /> }}
           />
         </div>
+        </>) : view === 'auto' ? (
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <TrackingModals {...track} cfg={cfg} token={token} inline />
+          </div>
+        ) : view === 'trending' ? (
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <TrendingModal open={view === 'trending'} inline track={track} onDirectSearch={t => { setView('search'); setQuery(t); doSearch(t); }} />
+          </div>
+        ) : view === 'settings' ? (
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <SettingsModal {...track} inline mode={mode} setMode={setMode} cfg={cfg}
+              onAccount={() => setAccountOpen(true)}
+              test115={test115}
+              onSave={async () => { await track.saveAuto(); await saveSettings(); }}
+              cookieText={cookieText} setCookieText={setCookieText} revealCookie={revealCookie} startQr={startQr}
+              targetCid={targetCid} setTargetCid={setTargetCid} transferCid={transferCid} setTransferCid={setTransferCid}
+              tmdbText={tmdbText} setTmdbText={setTmdbText}
+              pansouUrl={pansouUrl} setPansouUrl={setPansouUrl} bitmagnetUrl={bitmagnetUrl} setBitmagnetUrl={setBitmagnetUrl}
+              outboundProxy={outboundProxy} setOutboundProxy={setOutboundProxy}
+            />
+          </div>
+        ) : null}
       </div>
 
       <Modal
@@ -614,7 +635,7 @@ export default function App({ mode, setMode, dark }) {
         onCancel={() => setSrcOpen(false)}
         footer={null}
         title="搜索源与选项"
-        width={Math.min(420, typeof window !== 'undefined' ? window.innerWidth - 24 : 400)}
+        width={Math.min(560, typeof window !== 'undefined' ? window.innerWidth - 24 : 560)}
         styles={{ body: { paddingTop: 8 } }}
       >
         {sourcePanel}

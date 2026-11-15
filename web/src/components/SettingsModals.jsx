@@ -1,13 +1,13 @@
 import React from 'react';
 import {
-  Alert, AutoComplete, Button, Divider, Flex, Form, Input, InputNumber, Modal, Select, Space, Switch, Tag, Typography,
+  Alert, AutoComplete, Button, Divider, Flex, Form, Input, InputNumber, Modal, Segmented, Select, Space, Switch, Tag, Typography,
 } from 'antd';
 import { EyeOutlined, QrcodeOutlined } from '@ant-design/icons';
 import { api } from '../api.js';
 
 export function SettingsModal(props) {
   const {
-    open, onClose, cfg, onAccount, test115, onSave,
+    open, onClose, cfg, onAccount, test115, onSave, inline, mode, setMode,
     cookieText, setCookieText, revealCookie, startQr,
     targetCid, setTargetCid, transferCid, setTransferCid,
     tmdbText, setTmdbText,
@@ -17,20 +17,14 @@ export function SettingsModal(props) {
     startTraktOauth, traktOauthError,
     aiPresets, newAiPreset, editAiPreset, deleteAiPreset,
   } = props;
-  return (
-    <Modal
-      open={open}
-      title="设置"
-      width={640}
-      onCancel={onClose}
-      footer={
-        <Flex justify="flex-end" gap={8}>
-          <Button onClick={onAccount}>修改账号</Button>
-          <Button type="primary" onClick={onSave}>保存</Button>
-        </Flex>
-      }
-    >
+  const body = (
+    <>
       <Form layout="vertical">
+        <Divider orientation="left" style={{ margin: '0 0 12px' }}>外观</Divider>
+        <Form.Item label="主题">
+          <Segmented value={mode || 'auto'} onChange={setMode}
+            options={[{ label: '跟随系统', value: 'auto' }, { label: '亮色', value: 'light' }, { label: '暗色', value: 'dark' }]} />
+        </Form.Item>
         <Divider orientation="left" style={{ margin: '0 0 12px' }}>115 账号</Divider>
         <Form.Item label="115 Cookie">
           <Space.Compact style={{ width: '100%' }}>
@@ -133,6 +127,29 @@ export function SettingsModal(props) {
         </Flex>
         <Button onClick={newAiPreset}>新建 AI 预设</Button>
       </Form>
+
+    </>
+  );
+  if (inline) {
+    return (
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: '12px 20px' }}>
+          <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 12 }}>设置</div>
+          {body}
+        </div>
+        <div style={{ flexShrink: 0, borderTop: `1px solid #303030`, padding: '10px 20px' }}>
+          <Flex justify="flex-end" gap={8}>
+            <Button onClick={onAccount}>修改账号</Button>
+            <Button type="primary" onClick={onSave}>保存</Button>
+          </Flex>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <Modal open={open} title="设置" width={640} onCancel={onClose}
+      footer={<Flex justify="flex-end" gap={8}><Button onClick={onAccount}>修改账号</Button><Button type="primary" onClick={onSave}>保存</Button></Flex>}>
+      {body}
     </Modal>
   );
 }
