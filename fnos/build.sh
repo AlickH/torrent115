@@ -16,6 +16,7 @@ trap 'rm -rf "$STAGE"' EXIT
 command -v fnpack >/dev/null 2>&1 || { echo "缺少 fnpack" >&2; exit 1; }
 
 cp -R "$FNOS_DIR/." "$STAGE/"
+find "$STAGE" -name '._*' -delete
 sed -i "s/__T115_VERSION__/$VERSION/g" "$STAGE/manifest"
 sed -i "s/__T115_TAG__/$VERSION/g" "$STAGE/app/docker/docker-compose.yaml"
 sed -i "/^    image:/a\\    pull_policy: never" "$STAGE/app/docker/docker-compose.yaml"

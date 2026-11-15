@@ -53,7 +53,7 @@ IMAGE_ID="$(metadata_value IMAGE_ID)"
 command -v docker >/dev/null 2>&1 || fail "设备未安装 Docker"
 SYSTEM_ARCH="${TRIM_SYS_ARCH:-$(uname -m)}"
 case "$IMAGE_ARCH:$SYSTEM_ARCH" in
-  amd64:x86_64|arm64:aarch64) ;;
+  amd64:x86|amd64:x86_64|arm64:arm|arm64:aarch64) ;;
   *) fail "安装包架构 $IMAGE_ARCH 与设备架构 $SYSTEM_ARCH 不匹配" ;;
 esac
 
