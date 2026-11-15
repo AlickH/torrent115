@@ -369,7 +369,7 @@ export default function App({ mode, setMode, dark }) {
       ),
     },
     {
-      title: '操作', width: isMobile ? 96 : 130,
+      title: '操作', width: isMobile ? 96 : 150,
       render: (_, it) => (
         <Space direction="vertical" style={{ width: '100%' }}>
           <Button type="primary" size="small" block onClick={() => transfer(it)}>
@@ -378,6 +378,11 @@ export default function App({ mode, setMode, dark }) {
           <Button size="small" block onClick={() => (it.kind === '115' ? openShare(it) : copyUrl(it))}>
             {it.kind === '115' ? '打开' : '复制'}
           </Button>
+          {it.kind === 'magnet' ? (
+            <Button size="small" block onClick={() => localDownload(it)}>
+              {isMobile ? '本地' : '本地下载'}
+            </Button>
+          ) : null}
         </Space>
       ),
     },
@@ -415,6 +420,16 @@ export default function App({ mode, setMode, dark }) {
     if (!el) return;
     const target = el.querySelector('[data-key="' + key + '"]');
     if (target) target.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+  };
+
+  const localDownload = async it => {
+    try {
+      const r = await api('/api/bt/add', { method: 'POST', body: { magnet: withTrackers(it.url) } });
+      if (!r.ok) throw new Error(r.error || '添加失败');
+      message.success('已加入 BT 下载');
+    } catch (e) {
+      message.error(e.message || '添加失败');
+    }
   };
 
   const rows = displayResults[activeTab] || [];
