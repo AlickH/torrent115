@@ -10,6 +10,16 @@
         "rules": [{ "required": true, "message": "请输入管理员账号" }]
       },
       {
+        "type": "text",
+        "field": "t115_web_port",
+        "label": "Web 端口（用于域名/直连访问，默认 8099）",
+        "initValue": "8099",
+        "rules": [
+          { "required": true, "message": "请输入端口" },
+          { "pattern": "^[0-9]{1,5}$", "message": "端口必须是数字" }
+        ]
+      },
+      {
         "type": "password",
         "field": "t115_admin_password",
         "label": "管理员密码（至少 6 位）",

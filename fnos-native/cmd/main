@@ -13,11 +13,12 @@ start_app() {
   [ -x "${VENV}/bin/gunicorn" ] || { echo "venv missing" >>"$LOG"; return 1; }
   mkdir -p "${TRIM_PKGVAR}/logs"
   if [ -f "${TRIM_PKGVAR}/init.env" ]; then set -a; . "${TRIM_PKGVAR}/init.env"; set +a; fi
+  PORT="${T115_WEB_PORT:-8099}"
   rm -f "$SOCK"
   cd "$APP_DIR" || return 1
   DATA_DIR="${TRIM_PKGVAR}/data" PATH="${VENV}/bin:${PATH}" \
     nohup "${VENV}/bin/gunicorn" --workers 1 --threads 4 --timeout 120 \
-      --bind "unix:${SOCK}" --pid "${PID_FILE}" wsgi:application >>"$LOG" 2>&1 &
+      --bind "unix:${SOCK}" --bind "0.0.0.0:${PORT}" --pid "${PID_FILE}" wsgi:application >>"$LOG" 2>&1 &
   sleep 1
   status_app
 }

@@ -9,6 +9,15 @@
       "gatewaySocket": "app.sock",
       "url": "/app/torrent115",
       "allUsers": true
+    },
+    "torrent115.web": {
+      "title": "Torrent115 (端口)",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "protocol": "http",
+      "port": "${t115_web_port}",
+      "url": "/",
+      "allUsers": true
     }
   }
 }

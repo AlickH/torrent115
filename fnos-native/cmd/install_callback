@@ -7,6 +7,7 @@ mkdir -p "${TRIM_PKGVAR}/data" "${TRIM_PKGVAR}/logs"
 cat > "${TRIM_PKGVAR}/init.env" <<ENV
 T115_ADMIN_USER=${t115_admin_user:-admin}
 T115_ADMIN_PASSWORD=${t115_admin_password:-}
+T115_WEB_PORT=${t115_web_port:-8099}
 ENV
 chmod 600 "${TRIM_PKGVAR}/init.env"
 if [ ! -x "${VENV}/bin/python" ]; then
