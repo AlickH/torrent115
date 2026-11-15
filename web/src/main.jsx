@@ -8,7 +8,9 @@ import './styles.css';
 
 const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
 let trimApp = null;
-try { trimApp = new TrimApp(); } catch { trimApp = null; }
+if (typeof window !== 'undefined' && window.self !== window.top) {
+  try { trimApp = new TrimApp(); } catch { trimApp = null; }
+}
 
 function resolve(mode, hostTheme) {
   if (mode === 'light') return false;
