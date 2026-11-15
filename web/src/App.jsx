@@ -22,18 +22,18 @@ import {
 const SOURCE_LABELS = {
   all: '全部', pansou: '115分享', 'pansou-magnet': '盘搜磁力', apibay: 'TPB(apibay)',
   nyaa: 'Nyaa', dmhy: '动漫花园', btsearch: 'BTSearch', eztv: 'EZTV',
-  knaben: 'knaben', therarbg: 'therarbg', bitmagnet: 'bitmagnet',
+  knaben: 'knaben', therarbg: 'therarbg', bitmagnet: 'bitmagnet', jackett: 'Jackett',
 };
-const SITE_SOURCES = ['apibay', 'nyaa', 'dmhy', 'btsearch', 'eztv', 'knaben', 'therarbg', 'bitmagnet'];
+const SITE_SOURCES = ['apibay', 'nyaa', 'dmhy', 'btsearch', 'eztv', 'knaben', 'therarbg', 'bitmagnet', 'jackett'];
 const ALL_KEYS = ['pansou', 'pansou-magnet', ...SITE_SOURCES];
 const SOURCE_TAG_COLORS = {
   pansou: 'green', 'pansou-magnet': 'cyan', apibay: 'orange', nyaa: 'blue',
-  dmhy: 'magenta', btsearch: 'purple', eztv: 'geekblue', knaben: 'volcano',
+  dmhy: 'magenta', btsearch: 'purple', eztv: 'geekblue', knaben: 'volcano', jackett: 'gold',
   therarbg: 'gold', bitmagnet: 'red',
 };
 const DEFAULT_SOURCES = {
   pansou: true, apibay: true, nyaa: true, dmhy: true, btsearch: true,
-  eztv: true, knaben: true, therarbg: true, bitmagnet: false,
+  eztv: true, knaben: true, therarbg: true, bitmagnet: false, jackett: true,
 };
 
 function useSwipeDismiss(open, onDismiss) {
@@ -205,7 +205,7 @@ export default function App({ mode, setMode, dark }) {
     searchAbort.current = ac;
     const tasks = [];
     if (sources.pansou && cfg?.pansou_url) tasks.push('pansou');
-    SITE_SOURCES.forEach(k => { if (sources[k] && (k !== 'bitmagnet' || cfg?.bitmagnet_url)) tasks.push(k); });
+    SITE_SOURCES.forEach(k => { if (!sources[k]) return; if (k === 'bitmagnet' && !cfg?.bitmagnet_url) return; if (k === 'jackett' && !cfg?.jackett_url) return; tasks.push(k); });
     if (!tasks.length) { message.warning('至少选择一个搜索源'); return; }
 
     const res = { all: [] };
