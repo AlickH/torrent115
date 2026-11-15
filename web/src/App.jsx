@@ -515,7 +515,7 @@ export default function App({ mode, setMode, dark }) {
   return (
     <div className="page" style={{ height: '100vh', overflow: 'hidden', background: bg }}>
       {!isMobile ? (
-        <aside style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: 200, zIndex: 30, display: 'flex', flexDirection: 'column', padding: '4px 8px 10px', background: bg }}>
+        <aside style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: 200, zIndex: 30, display: 'flex', flexDirection: 'column', padding: '4px 8px 10px', background: bg, boxSizing: 'border-box' }}>
           <div style={{ flex: 1, overflow: 'auto', paddingTop: 6 }}>{navMenu}</div>
         </aside>
       ) : null}
