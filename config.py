@@ -24,6 +24,8 @@ DEFAULT_CONFIG = {
     "monitor_cid": "",
     "pansou_url": "http://127.0.0.1:18080",
     "bitmagnet_url": "",
+    "jackett_url": "",
+    "jackett_api_key": "",
     "outbound_proxy": "",
     "auto_enabled": False,
     "auto_interval": 180,
@@ -85,6 +87,7 @@ DEFAULT_CONFIG = {
         "knaben": {"enabled": True, "url": "https://api.knaben.org/v1", "kind": "knaben"},
         "therarbg": {"enabled": True, "url": "https://therarbg.com/get-posts/keywords:{q}/?format=json", "kind": "therarbg"},
         "bitmagnet": {"enabled": False, "url": "http://127.0.0.1:3333/graphql", "kind": "bitmagnet"},
+        "jackett": {"enabled": True, "url": "http://127.0.0.1:9117", "kind": "jackett"},
     },
 }
 

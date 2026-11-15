@@ -126,6 +126,8 @@ export default function App({ mode, setMode, dark }) {
   const [tmdbText, setTmdbText] = useState('');
   const [pansouUrl, setPansouUrl] = useState('');
   const [bitmagnetUrl, setBitmagnetUrl] = useState('');
+  const [jackettUrl, setJackettUrl] = useState('');
+  const [jackettApiKey, setJackettApiKey] = useState('');
   const [targetCid, setTargetCid] = useState('');
   const [transferCid, setTransferCid] = useState('');
   const [outboundProxy, setOutboundProxy] = useState('');
@@ -161,6 +163,8 @@ export default function App({ mode, setMode, dark }) {
     setCfg(d);
     setPansouUrl(d.pansou_url || '');
     setBitmagnetUrl(d.bitmagnet_url || '');
+    setJackettUrl(d.jackett_url || '');
+    setJackettApiKey(d.jackett_api_key || '');
     setTargetCid(d.p115_target_cid || '');
     setTransferCid(d.p115_transfer_cid || '');
     setOutboundProxy(d.outbound_proxy || '');
@@ -372,13 +376,15 @@ export default function App({ mode, setMode, dark }) {
       title: '操作', width: isMobile ? 96 : 150,
       render: (_, it) => (
         <Space direction="vertical" style={{ width: '100%' }}>
-          <Button type="primary" size="small" block onClick={() => transfer(it)}>
-            {it.kind === '115' ? (isMobile ? '转存' : '转存到115') : (isMobile ? '云下载' : '发到115云下载')}
-          </Button>
+          {it.kind !== 'torrent' ? (
+            <Button type="primary" size="small" block onClick={() => transfer(it)}>
+              {it.kind === '115' ? (isMobile ? '转存' : '转存到115') : (isMobile ? '云下载' : '发到115云下载')}
+            </Button>
+          ) : null}
           <Button size="small" block onClick={() => (it.kind === '115' ? openShare(it) : copyUrl(it))}>
             {it.kind === '115' ? '打开' : '复制'}
           </Button>
-          {it.kind === 'magnet' ? (
+          {(it.kind === 'magnet' || it.kind === 'torrent') ? (
             <Button size="small" block onClick={() => localDownload(it)}>
               {isMobile ? '本地' : '本地下载'}
             </Button>
@@ -424,7 +430,8 @@ export default function App({ mode, setMode, dark }) {
 
   const localDownload = async it => {
     try {
-      const r = await api('/api/bt/add', { method: 'POST', body: { magnet: withTrackers(it.url) } });
+      const target = it.kind === 'torrent' ? it.url : withTrackers(it.url);
+      const r = await api('/api/bt/add', { method: 'POST', body: { magnet: target } });
       if (!r.ok) throw new Error(r.error || '添加失败');
       message.success('已加入 BT 下载');
     } catch (e) {
@@ -498,6 +505,8 @@ export default function App({ mode, setMode, dark }) {
     const body = {
       pansou_url: pansouUrl,
       bitmagnet_url: bitmagnetUrl,
+      jackett_url: jackettUrl,
+      jackett_api_key: jackettApiKey,
       p115_target_cid: targetCid,
       p115_transfer_cid: transferCid,
       outbound_proxy: outboundProxy,
@@ -696,6 +705,7 @@ export default function App({ mode, setMode, dark }) {
               targetCid={targetCid} setTargetCid={setTargetCid} transferCid={transferCid} setTransferCid={setTransferCid}
               tmdbText={tmdbText} setTmdbText={setTmdbText}
               pansouUrl={pansouUrl} setPansouUrl={setPansouUrl} bitmagnetUrl={bitmagnetUrl} setBitmagnetUrl={setBitmagnetUrl}
+              jackettUrl={jackettUrl} setJackettUrl={setJackettUrl} jackettApiKey={jackettApiKey} setJackettApiKey={setJackettApiKey}
               outboundProxy={outboundProxy} setOutboundProxy={setOutboundProxy}
               localSavePath={localSavePath} setLocalSavePath={setLocalSavePath}
               localMoveEnabled={localMoveEnabled} setLocalMoveEnabled={setLocalMoveEnabled}

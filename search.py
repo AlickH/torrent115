@@ -421,6 +421,62 @@ def search_bitmagnet(cfg, q, resolved):
         })
     return items, (None if items else "bitmagnet 索引里还没有匹配")
 
+
+def search_jackett(cfg, q):
+    site = (cfg.get("sites") or {}).get("jackett") or {}
+    base = (cfg.get("jackett_url") or site.get("url") or "").rstrip("/")
+    key = (cfg.get("jackett_api_key") or site.get("api_key") or "").strip()
+    if not base:
+        return [], "未配置 Jackett 地址"
+    if not key:
+        return [], "未配置 Jackett API Key"
+    url = base + "/api/v2.0/indexers/all/results/torznab/api"
+    try:
+        r = http_request(cfg, "GET", url, params={"apikey": key, "t": "search", "q": q, "limit": 50},
+                         headers={"User-Agent": UA}, timeout=45)
+        r.raise_for_status()
+    except Exception as e:
+        return [], f"Jackett 请求失败: {e}"
+    import xml.etree.ElementTree as ET
+    try:
+        root = ET.fromstring(r.content)
+    except Exception as e:
+        return [], f"Jackett 响应解析失败: {e}"
+    ns = {"torznab": "http://torznab.com/schemas/2015/feed"}
+    items, seen = [], set()
+    for node in root.findall(".//item"):
+        title = (node.findtext("title") or "").strip()
+        link = (node.findtext("link") or "").strip()
+        enclosure = node.find("enclosure")
+        torrent = (enclosure.get("url") if enclosure is not None else "") or ""
+        attrs = {}
+        for a in node.findall("torznab:attr", ns):
+            attrs[(a.get("name") or "").lower()] = a.get("value") or ""
+        magnet = attrs.get("magneturl") or ""
+        if not magnet and (link.startswith("magnet:") or torrent.startswith("magnet:")):
+            magnet = link if link.startswith("magnet:") else torrent
+        target = magnet or torrent or link
+        if not title or not target:
+            continue
+        kind = "magnet" if target.startswith("magnet:") else "torrent"
+        key_url = magnet.split("&")[0] if magnet else target
+        if key_url in seen:
+            continue
+        seen.add(key_url)
+        try:
+            size = int(attrs.get("size") or 0)
+        except Exception:
+            size = 0
+        items.append({
+            "source": "jackett", "kind": kind, "title": title, "url": target,
+            "seeders": int(attrs.get("seeders") or 0),
+            "leechers": int(attrs.get("peers") or 0),
+            "size": size,
+            "meta": " · ".join(x for x in [attrs.get("category", ""), human_size(size)] if x),
+            "tmdb": "",
+        })
+    return items, (None if items else "Jackett 没有匹配结果")
+
 def search_site(cfg, key, q, resolved=None):
     site = (cfg.get("sites") or {}).get(key) or {}
     tmpl = site.get("url") or ""
@@ -443,6 +499,8 @@ def search_site(cfg, key, q, resolved=None):
         return search_therarbg(cfg, q, resolved, use_q)
     if key == "bitmagnet":
         return search_bitmagnet(cfg, q, resolved)
+    if key == "jackett":
+        return search_jackett(cfg, q)
     kind = site.get("kind")
     if kind not in ("json", "rss"):
         return [], "不支持的来源类型"
@@ -503,7 +561,7 @@ def _collect(cfg, q, sources, want_sites):
         if "pansou" in sources:
             jobs.append(("pansou", ex.submit(search_pansou, cfg, q)))
         if want_sites:
-            for key in ("apibay", "nyaa", "dmhy", "btsearch", "eztv", "knaben", "therarbg", "bitmagnet"):
+            for key in ("apibay", "nyaa", "dmhy", "btsearch", "eztv", "knaben", "therarbg", "bitmagnet", "jackett"):
                 if key in sources and (cfg.get("sites") or {}).get(key, {}).get("enabled", True):
                     jobs.append((key, ex.submit(search_site, cfg, key, q, resolved)))
         for name, fut in jobs:

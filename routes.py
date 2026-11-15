@@ -279,7 +279,7 @@ def set_config():
               "auto_max_size_gb", "auto_min_seeders", "auto_codec", "auto_dry_run",
               "ai_enabled", "ai_base_url", "ai_model", "trakt_client_id",
               "tmdb_api_key", "monitor_enabled", "monitor_interval", "monitor_cid",
-              "drivemby_url", "drivemby_token", "drivemby_prefix", "drivemby_enabled"):
+              "drivemby_url", "drivemby_token", "drivemby_prefix", "drivemby_enabled", "jackett_url", "jackett_api_key"):
         if k in body:
             cfg[k] = body[k]
     if body.get("p115_cookie"):
@@ -734,8 +734,8 @@ def api_bt_tasks():
 def api_bt_add():
     body = request.get_json(silent=True) or {}
     magnet = (body.get("magnet") or "").strip()
-    if not magnet.startswith("magnet:"):
-        return jsonify({"ok": False, "error": "请输入磁力链接"}), 400
+    if not (magnet.startswith("magnet:") or magnet.startswith("http://") or magnet.startswith("https://")):
+        return jsonify({"ok": False, "error": "请输入磁力链接或种子地址"}), 400
     try:
         import btdownloader
         h = btdownloader.add_magnet(load_config(), magnet)

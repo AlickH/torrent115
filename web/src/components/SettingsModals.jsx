@@ -13,7 +13,7 @@ export function SettingsModal(props) {
     cookieText, setCookieText, revealCookie, startQr,
     targetCid, setTargetCid, transferCid, setTransferCid,
     tmdbText, setTmdbText,
-    pansouUrl, setPansouUrl, bitmagnetUrl, setBitmagnetUrl, outboundProxy, setOutboundProxy,
+    pansouUrl, setPansouUrl, bitmagnetUrl, setBitmagnetUrl, jackettUrl, setJackettUrl, jackettApiKey, setJackettApiKey, outboundProxy, setOutboundProxy,
     maxEpisodes, setMaxEpisodes, taskTimeout, setTaskTimeout, waitTimeout, setWaitTimeout, drivembyEnabled, setDrivembyEnabled,
     localSavePath, setLocalSavePath, localMoveEnabled, setLocalMoveEnabled, localDonePath, setLocalDonePath,
     localClient, setLocalClient, localQbtUrl, setLocalQbtUrl, localQbtUser, setLocalQbtUser, localQbtPassword, setLocalQbtPassword, localQbtSock, setLocalQbtSock,
@@ -91,6 +91,12 @@ export function SettingsModal(props) {
             <span style={{ margin: '0 6px' }}>·</span>
             <a href="https://github.com/bitmagnet-io/bitmagnet" target="_blank" rel="noreferrer">GitHub 仓库（含 docker-compose）→</a>
           </Typography.Text>
+        </Form.Item>
+        <Form.Item label="Jackett 地址（可选，Torznab 聚合）">
+          <Input value={jackettUrl} onChange={e => setJackettUrl(e.target.value)} placeholder="http://127.0.0.1:9117" />
+        </Form.Item>
+        <Form.Item label="Jackett API Key">
+          <Input.Password value={jackettApiKey} onChange={e => setJackettApiKey(e.target.value)} placeholder="Jackett 设置页里的 API Key" />
         </Form.Item>
         <Divider orientation="left" style={{ margin: '4px 0 12px' }}>网络</Divider>
         <Form.Item label="出口代理（可选，直连失败时兜底；如 http://user:pass@127.0.0.1:7890）">
