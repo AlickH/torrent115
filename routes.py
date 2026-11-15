@@ -720,3 +720,46 @@ def api_add115():
         return jsonify({"ok": bool(res.get("state")), "result": res, "notes": notes})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e), "notes": notes})
+
+@bp.route("/api/bt/tasks")
+def api_bt_tasks():
+    try:
+        import btdownloader
+        return jsonify({"ok": True, "tasks": btdownloader.tasks()})
+    except Exception as e:
+        return jsonify({"ok": False, "tasks": [], "error": str(e)})
+
+
+@bp.route("/api/bt/add", methods=["POST"])
+def api_bt_add():
+    body = request.get_json(silent=True) or {}
+    magnet = (body.get("magnet") or "").strip()
+    if not magnet.startswith("magnet:"):
+        return jsonify({"ok": False, "error": "请输入磁力链接"}), 400
+    try:
+        import btdownloader
+        h = btdownloader.add_magnet(load_config(), magnet)
+        return jsonify({"ok": True, "hash": h})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@bp.route("/api/bt/pause", methods=["POST"])
+def api_bt_pause():
+    import btdownloader
+    body = request.get_json(silent=True) or {}
+    return jsonify({"ok": btdownloader.pause((body.get("hash") or "").strip())})
+
+
+@bp.route("/api/bt/resume", methods=["POST"])
+def api_bt_resume():
+    import btdownloader
+    body = request.get_json(silent=True) or {}
+    return jsonify({"ok": btdownloader.resume((body.get("hash") or "").strip())})
+
+
+@bp.route("/api/bt/delete", methods=["POST"])
+def api_bt_delete():
+    import btdownloader
+    body = request.get_json(silent=True) or {}
+    return jsonify({"ok": btdownloader.delete((body.get("hash") or "").strip(), bool(body.get("files")))})

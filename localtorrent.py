@@ -145,6 +145,51 @@ def _progress(done, total):
         return 0.0
 
 
+
+
+class BuiltinClient(BaseClient):
+    """内置 libtorrent 下载器。"""
+
+    def __init__(self, cfg=None):
+        super().__init__(cfg)
+
+    def login(self):
+        self.ok = True
+        return True
+
+    def add_magnet(self, magnet, savepath=None):
+        import btdownloader
+        btdownloader.add_magnet(self.cfg, magnet)
+        return True
+
+    def torrents(self, hashes):
+        import btdownloader
+        wanted = {(h or "").lower() for h in (hashes or []) if h}
+        out = {}
+        for t in btdownloader.tasks():
+            h = (t.get("hash") or "").lower()
+            if wanted and h not in wanted:
+                continue
+            out[h] = {
+                "hash": h,
+                "name": t.get("name") or "",
+                "progress": float(t.get("progress") or 0) / 100.0,
+                "state": t.get("state") or "",
+                "save_path": t.get("save_path") or "",
+                "content_path": "",
+                "size": int(t.get("total") or 0),
+                "tags": "",
+            }
+        return out
+
+    def delete(self, hashes, delete_files=False):
+        import btdownloader
+        ok = False
+        for h in hashes:
+            ok = btdownloader.delete(h, delete_files) or ok
+        return ok
+
+
 class Aria2Client(BaseClient):
     """aria2 JSON-RPC。"""
 
@@ -330,7 +375,9 @@ class TransmissionClient(BaseClient):
 
 
 def make_client(cfg=None):
-    mode = (cfg or {}).get("local_client") or "qbt_local"
+    mode = (cfg or {}).get("local_client") or "builtin"
+    if mode in ("builtin", ""):
+        return BuiltinClient(cfg)
     if mode == "aria2":
         return Aria2Client(cfg)
     if mode == "transmission":

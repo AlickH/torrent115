@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrimApp } from '@trimjs/web-app';
+import { hostApp } from './lib/host.js';
 import { createRoot } from 'react-dom/client';
 import { ConfigProvider, App as AntApp, theme as antTheme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
@@ -7,10 +7,7 @@ import App from './App.jsx';
 import './styles.css';
 
 const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
-let trimApp = null;
-if (typeof window !== 'undefined' && window.self !== window.top) {
-  try { trimApp = new TrimApp(); } catch { trimApp = null; }
-}
+const trimApp = hostApp();
 
 function resolve(mode, hostTheme) {
   if (mode === 'light') return false;

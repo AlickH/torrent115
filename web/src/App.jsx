@@ -8,6 +8,7 @@ const SettingsModal = lazy(() => import('./components/SettingsModals.jsx').then(
 const AiPresetModal = lazy(() => import('./components/SettingsModals.jsx').then(m => ({ default: m.AiPresetModal })));
 const AccountModal = lazy(() => import('./components/SettingsModals.jsx').then(m => ({ default: m.AccountModal })));
 const TrendingModal = lazy(() => import('./components/TrendingModal.jsx'));
+const BtDownloads = lazy(() => import('./components/BtDownloads.jsx'));
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert, App as AntApp, AutoComplete, Button, Checkbox, Collapse, Col, Divider, Dropdown, Empty, Flex, Form, Image, Input, theme,
@@ -15,7 +16,7 @@ import {
 } from 'antd';
 import {
   CalendarOutlined, CheckCircleOutlined, DesktopOutlined, EyeOutlined, FileTextOutlined, LogoutOutlined, MenuOutlined, MoonOutlined, PlusOutlined, QrcodeOutlined, SearchOutlined, SyncOutlined,
-  SettingOutlined, SlidersOutlined, SunOutlined, FireOutlined,
+  SettingOutlined, SlidersOutlined, SunOutlined, FireOutlined, DownloadOutlined,
 } from '@ant-design/icons';
 
 const SOURCE_LABELS = {
@@ -549,6 +550,7 @@ export default function App({ mode, setMode, dark }) {
       style={{ border: 'none', background: 'transparent' }}
       items={[
         { key: 'search', icon: <SearchOutlined />, label: '搜索' },
+        { key: 'bt', icon: <DownloadOutlined />, label: 'BT 下载' },
         { key: 'auto', icon: <CalendarOutlined />, label: '追剧自动转存' },
         { key: 'trending', icon: <FireOutlined />, label: 'TMDB 最近热映' },
         { type: 'divider' },

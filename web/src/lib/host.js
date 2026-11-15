@@ -12,11 +12,19 @@ export function hostApp() {
 
 export async function pickFolder(title) {
   const a = hostApp();
-  if (!a || !a.pickUserFile) return null;
-  try {
-    const r = await a.pickUserFile({ directory: true, title: title || '选择文件夹' });
-    return (r && r.data && r.data[0]) || null;
-  } catch {
-    return null;
+  if (!a) return null;
+  const label = title || '选择文件夹';
+  const methods = [
+    () => a.pickUserFile && a.pickUserFile({ directory: true, title: label }),
+    () => a.pickFile && a.pickFile({ directory: true, title: label }),
+    () => a.pickSharedFile && a.pickSharedFile({ title: label }),
+  ];
+  for (const run of methods) {
+    try {
+      const r = await run();
+      if (Array.isArray(r) && r[0]) return r[0];
+      if (r && r.data && r.data[0]) return r.data[0];
+    } catch { /* try next */ }
   }
+  return null;
 }

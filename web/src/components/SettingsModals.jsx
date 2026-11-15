@@ -4,6 +4,7 @@ import {
 } from 'antd';
 import { EyeOutlined, QrcodeOutlined } from '@ant-design/icons';
 import { api, APP_BASE } from '../api.js';
+import { message } from 'antd';
 import { pickFolder } from '../lib/host.js';
 
 export function SettingsModal(props) {
@@ -108,44 +109,14 @@ export function SettingsModal(props) {
         <Form.Item label="转存完成后自动触发 Drivemby 刷新">
           <Switch checked={drivembyEnabled} onChange={setDrivembyEnabled} />
         </Form.Item>
-        <Divider orientation="left" style={{ margin: '4px 0 12px' }}>本地下载器</Divider>
-        <Form.Item label="使用哪个下载器">
-          <Select value={localClient} onChange={setLocalClient} options={[
-            { value: 'qbt_local', label: 'fnOS 下载中心（qBittorrent unix socket）' },
-            { value: 'qbt_webui', label: 'qBittorrent WebUI（TCP）' },
-            { value: 'aria2', label: 'aria2 JSON-RPC' },
-            { value: 'transmission', label: 'Transmission RPC' },
-          ]} />
-        </Form.Item>
-        {localClient === 'qbt_webui' ? (
-          <>
-            <Form.Item label="WebUI 地址"><Input value={localQbtUrl} onChange={e => setLocalQbtUrl(e.target.value)} placeholder="http://127.0.0.1:8080" /></Form.Item>
-            <Form.Item label="用户名"><Input value={localQbtUser} onChange={e => setLocalQbtUser(e.target.value)} /></Form.Item>
-            <Form.Item label="密码"><Input.Password value={localQbtPassword} onChange={e => setLocalQbtPassword(e.target.value)} placeholder="qBittorrent WebUI 密码" /></Form.Item>
-          </>
-        ) : localClient === 'aria2' ? (
-          <>
-            <Form.Item label="JSON-RPC 地址"><Input value={aria2Url} onChange={e => setAria2Url(e.target.value)} placeholder="http://127.0.0.1:6800/jsonrpc" /></Form.Item>
-            <Form.Item label="RPC Secret（可选）"><Input.Password value={aria2Secret} onChange={e => setAria2Secret(e.target.value)} /></Form.Item>
-          </>
-        ) : localClient === 'transmission' ? (
-          <>
-            <Form.Item label="RPC 地址"><Input value={transmissionUrl} onChange={e => setTransmissionUrl(e.target.value)} placeholder="http://127.0.0.1:9091/transmission/rpc" /></Form.Item>
-            <Form.Item label="用户名（可选）"><Input value={transmissionUser} onChange={e => setTransmissionUser(e.target.value)} /></Form.Item>
-            <Form.Item label="密码（可选）"><Input.Password value={transmissionPassword} onChange={e => setTransmissionPassword(e.target.value)} /></Form.Item>
-          </>
-        ) : (
-          <Form.Item label="qBittorrent socket 路径"><Input value={localQbtSock} onChange={e => setLocalQbtSock(e.target.value)} placeholder="/run/qbt.sock" /></Form.Item>
-        )}
-        {localClient !== 'qbt_local' && localClient !== 'qbt_webui' ? (
-          <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
-            该下载器不支持文件移动 API，将交给宿主机脚本代理执行（需要安装 t115-host-agent）。
-          </Typography.Paragraph>
-        ) : null}
+        <Divider orientation="left" style={{ margin: '4px 0 12px' }}>下载</Divider>
+        <Typography.Paragraph type="secondary" style={{ fontSize: 12, marginTop: 0 }}>
+          使用内置 BT 下载器，无需额外配置。
+        </Typography.Paragraph>
         <Form.Item label="保存目录">
           <Space.Compact style={{ width: '100%' }}>
-            <Input value={localSavePath} onChange={e => setLocalSavePath(e.target.value)} placeholder="/vol1/1000/Downloads" />
-            <Button onClick={async () => { const p = await pickFolder('选择下载保存目录'); if (p) setLocalSavePath(p); }}>选择</Button>
+            <Input value={localSavePath} onChange={e => setLocalSavePath(e.target.value)} placeholder="/data/downloads" />
+            <Button onClick={async () => { const p = await pickFolder('选择下载保存目录'); if (p) setLocalSavePath(p); else message.warning('未选择文件夹，或当前环境不支持系统选择器'); }}>选择</Button>
           </Space.Compact>
         </Form.Item>
         <Form.Item label="完成后移动到目标目录">
@@ -153,8 +124,8 @@ export function SettingsModal(props) {
         </Form.Item>
         <Form.Item label="移动目标目录">
           <Space.Compact style={{ width: '100%' }}>
-            <Input value={localDonePath} onChange={e => setLocalDonePath(e.target.value)} disabled={!localMoveEnabled} placeholder="/vol1/1000/Downloads/Done" />
-            <Button disabled={!localMoveEnabled} onClick={async () => { const p = await pickFolder('选择完成目录'); if (p) setLocalDonePath(p); }}>选择</Button>
+            <Input value={localDonePath} onChange={e => setLocalDonePath(e.target.value)} disabled={!localMoveEnabled} placeholder="/data/downloads/Done" />
+            <Button disabled={!localMoveEnabled} onClick={async () => { const p = await pickFolder('选择完成目录'); if (p) setLocalDonePath(p); else message.warning('未选择文件夹，或当前环境不支持系统选择器'); }}>选择</Button>
           </Space.Compact>
         </Form.Item>
         <Divider orientation="left" style={{ margin: '4px 0 12px' }}>上传到 115</Divider>
