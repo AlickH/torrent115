@@ -796,3 +796,12 @@ def api_115_offline():
         return jsonify({"ok": True, "tasks": p115_offline_list(cfg)})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e), "tasks": []}), 500
+
+
+@bp.route("/api/115/uploads")
+def api_115_uploads():
+    try:
+        import p115upload
+        return jsonify({"ok": True, "uploads": p115upload.uploads()})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e), "uploads": []}), 500

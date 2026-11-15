@@ -2,9 +2,12 @@
 """115 原生上传：基于 p115sync 的秒传/OSS 上传。"""
 import json
 import os
+import threading
 import time
 
 STATE_NAME = "upload_state.json"
+_UPLOADS = {}
+_UP_LOCK = threading.Lock()
 
 
 def _state_path():
@@ -25,6 +28,27 @@ def _save_state(state):
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(state, f, ensure_ascii=False)
     os.replace(tmp, p)
+
+
+def _record(path, status, error="", hash_=""):
+    try:
+        size = os.path.getsize(path)
+    except Exception:
+        size = 0
+    with _UP_LOCK:
+        _UPLOADS[hash_ or path] = {
+            "name": os.path.basename(path),
+            "path": path,
+            "size": size,
+            "status": status,
+            "error": error[:300],
+            "time": int(time.time()),
+        }
+
+
+def uploads():
+    with _UP_LOCK:
+        return sorted(_UPLOADS.values(), key=lambda x: x["time"], reverse=True)
 
 
 def upload_file(cfg, path, cid=None):
@@ -87,8 +111,14 @@ def upload_file(cfg, path, cid=None):
 
     client._request_json = _retry_request
     helper = P115UploadHelper(client)
+    _record(path, "uploading")
     try:
-        return helper.upload_file_sample(path, pid=pid)
+        result = helper.upload_file_sample(path, pid=pid)
+        _record(path, "success")
+        return result
+    except Exception as e:
+        _record(path, "failed", str(e))
+        raise
     finally:
         if old_http_proxy is None:
             os.environ.pop("HTTP_PROXY", None)

@@ -21,6 +21,7 @@ export default function Yun115() {
   const [files, setFiles] = useState([]);
   const [stack, setStack] = useState([{ cid: '0', name: '根目录' }]);
   const [tasks, setTasks] = useState([]);
+  const [uploads, setUploads] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const loadFiles = async cid => {
@@ -42,7 +43,14 @@ export default function Yun115() {
     setLoading(false);
   };
   useEffect(() => { loadFiles('0'); }, []);
+  const loadUploads = async () => {
+    try {
+      const r = await api('/api/115/uploads');
+      setUploads(r.uploads || []);
+    } catch { /* ignore */ }
+  };
   useEffect(() => { if (tab === 'offline') loadOffline(); }, [tab]);
+  useEffect(() => { if (tab !== 'uploads') return; loadUploads(); const t = setInterval(loadUploads, 2000); return () => clearInterval(t); }, [tab]);
 
   const enter = row => {
     if (!row.is_dir) return;
@@ -66,8 +74,8 @@ export default function Yun115() {
   ];
   const taskCols = [
     { title: '任务', dataIndex: 'name', ellipsis: true, render: (v, r) => (
-      <div>
-        <Typography.Text>{v}</Typography.Text>
+      <div style={{ minWidth: 0 }}>
+        <Typography.Text ellipsis={{ tooltip: v }} style={{ maxWidth: '100%' }}>{v}</Typography.Text>
         <div style={{ marginTop: 4 }}><Tag bordered={false}>{r.status_text || r.status}</Tag></div>
       </div>
     ) },
@@ -77,21 +85,47 @@ export default function Yun115() {
     { title: '添加时间', width: 180, render: (_, r) => when(r.add_time) },
   ];
 
+  const uploadCols = [
+    { title: '文件', dataIndex: 'name', ellipsis: true, render: (v, r) => (
+      <div style={{ minWidth: 0 }}>
+        <Typography.Text ellipsis={{ tooltip: v }} style={{ maxWidth: '100%' }}>{v}</Typography.Text>
+        <div style={{ marginTop: 4 }}>
+          <Tag bordered={false} color={r.status === 'success' ? 'green' : r.status === 'failed' ? 'red' : 'blue'}>
+            {r.status === 'success' ? '上传成功' : r.status === 'failed' ? '上传失败' : '上传中'}
+          </Tag>
+        </div>
+      </div>
+    ) },
+    { title: '大小', width: 120, render: (_, r) => size(r.size) },
+    { title: '时间', width: 180, render: (_, r) => when(r.time) },
+    { title: '错误', dataIndex: 'error', ellipsis: true, render: v => v || '-' },
+  ];
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '16px 20px' }}>
-      <Tabs activeKey={tab} onChange={setTab} items={[{ key: 'files', label: '文件列表' }, { key: 'offline', label: '离线下载' }]}
-        tabBarExtraContent={<Button icon={<ReloadOutlined />} onClick={() => tab === 'files' ? loadFiles(stack[stack.length - 1].cid) : loadOffline()}>刷新</Button>} />
+      <Tabs activeKey={tab} onChange={setTab}
+        items={[{ key: 'files', label: '文件列表' }, { key: 'offline', label: '离线下载' }, { key: 'uploads', label: '本地上传' }]}
+        tabBarExtraContent={<Button icon={<ReloadOutlined />} onClick={() => tab === 'files' ? loadFiles(stack[stack.length - 1].cid) : tab === 'offline' ? loadOffline() : loadUploads()}>刷新</Button>} />
       {tab === 'files' ? (
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <Breadcrumb style={{ marginBottom: 10 }} items={stack.map((s, i) => ({
             title: <a onClick={() => jump(i)}>{s.name}</a>,
           }))} />
-          <Table rowKey="id" size="middle" columns={fileCols} dataSource={files} loading={loading} pagination={false}
-            locale={{ emptyText: <Empty description="空目录" /> }} />
+          <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+            <Table rowKey="id" size="middle" columns={fileCols} dataSource={files} loading={loading} pagination={false}
+              locale={{ emptyText: <Empty description="空目录" /> }} />
+          </div>
+        </div>
+      ) : tab === 'offline' ? (
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+          <Table rowKey="hash" size="middle" columns={taskCols} dataSource={tasks} loading={loading} pagination={false}
+            locale={{ emptyText: <Empty description="没有离线任务" /> }} />
         </div>
       ) : (
-        <Table rowKey="hash" size="middle" columns={taskCols} dataSource={tasks} loading={loading} pagination={false}
-          locale={{ emptyText: <Empty description="没有离线任务" /> }} />
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+          <Table rowKey="name" size="middle" columns={uploadCols} dataSource={uploads} loading={loading} pagination={false}
+            locale={{ emptyText: <Empty description="还没有本地上传记录" /> }} />
+        </div>
       )}
     </div>
   );
