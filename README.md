@@ -144,3 +144,14 @@ appcenter-cli install-fpk artifacts/release/Torrent115-0.1.0.fpk
 - 应用数据保存在 fnOS 应用数据目录（`${TRIM_PKGVAR}/data`），首次安装后需要在设置里重新填写 115 Cookie / TMDB Key 等；
 - 默认使用 host 网络；
 - 「本地下载器」需要手动在 `fnos/app/docker/docker-compose.yaml` 取消 qbt socket 挂载注释并重新打包。
+
+## Native 进程版（商店方向）
+
+`fnos-native/` 是 Native FPK 工程：使用 fnOS 商店的 `python312` 依赖，不依赖 Docker，以 package 用户运行。
+
+```bash
+bash fnos-native/build.sh 0.12.1 x86
+bash fnos-native/build.sh 0.12.1 arm
+```
+
+详见 [fnos-native/README.md](fnos-native/README.md)。
