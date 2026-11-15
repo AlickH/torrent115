@@ -44,27 +44,26 @@ stop_app() {
   rm -f "$SOCK"
 }
 
-start_transmission() {
+start_bt() {
   export T115_DOWNLOAD_DIR="${TRIM_PKGVAR}/data/downloads"
-  mkdir -p "$T115_DOWNLOAD_DIR" "${TRIM_PKGVAR}/data/transmission" "${TRIM_PKGVAR}/logs"
+  export T115_QBT_SOCK="${TRIM_PKGVAR}/data/qbt.sock"
+  mkdir -p "$T115_DOWNLOAD_DIR" "${TRIM_PKGVAR}/data/qbt" "${TRIM_PKGVAR}/data/qbt-home" "${TRIM_PKGVAR}/logs"
   case "$(uname -m)" in aarch64|arm64) ARCH=arm ;; *) ARCH=x86 ;; esac
-  TDIR="${TRIM_APPDEST}/server/bin/${ARCH}"
-  echo "[transmission] start $(date) TDIR=$TDIR" >>"${TRIM_PKGVAR}/logs/transmission.log"
-  TPID="${TRIM_PKGVAR}/data/transmission/transmission.pid"
-  if [ -x "${TDIR}/transmission-daemon" ] && ! { [ -f "$TPID" ] && kill -0 "$(cat "$TPID" 2>/dev/null)" 2>/dev/null; }; then
-    LD_LIBRARY_PATH="${TDIR}/lib" "${TDIR}/transmission-daemon" \
-      -f -g "${TRIM_PKGVAR}/data/transmission" -w "$T115_DOWNLOAD_DIR" \
-      -p 9092 -r 127.0.0.1 -u t115 -v t115pass \
-      -P 51413 -m -o -y --utp -L 500 -l 100 -et \
-      -x "$TPID" \
-      >>"${TRIM_PKGVAR}/logs/transmission.log" 2>&1 &
-  else
-    echo "[transmission] skipped executable=$([ -x "${TDIR}/transmission-daemon" ] && echo yes || echo no)" >>"${TRIM_PKGVAR}/logs/transmission.log"
+  BINDIR="${TRIM_APPDEST}/server/bin/${ARCH}"
+  PIDF="${TRIM_PKGVAR}/data/qbt.pid"
+  if [ -x "${BINDIR}/qbittorrent-nox" ] && ! { [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF" 2>/dev/null)" 2>/dev/null; }; then
+    rm -f "$T115_QBT_SOCK"
+    HOME="${TRIM_PKGVAR}/data/qbt-home" \
+    LD_LIBRARY_PATH="${BINDIR}/lib:/usr/trim/lib" \
+    "${BINDIR}/qbittorrent-nox" --profile="${TRIM_PKGVAR}/data/qbt" \
+      --webui-sock-path="$T115_QBT_SOCK" --webui-password=t115pass \
+      >>"${TRIM_PKGVAR}/logs/qbt.log" 2>&1 &
+    echo $! >"$PIDF"
   fi
 }
 
 case "${1:-}" in
-  start) start_transmission; start_app ;;
+  start) start_bt; start_app ;;
   stop) stop_app ;;
   status) status_app ;;
   *) echo "unknown" >&2; exit 1 ;;
