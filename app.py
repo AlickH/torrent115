@@ -91,11 +91,11 @@ def _clear_fail(ip):
         _LOGIN_FAILS.pop(ip, None)
 
 
-@app.before_request
 def _redirect(path):
     return redirect((request.script_root or "") + path)
 
 
+@app.before_request
 def _require_login():
     if not _auth_enabled():
         return None
