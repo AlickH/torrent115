@@ -95,6 +95,7 @@ export default function App({ mode, setMode, dark }) {
   const [checks, setChecks] = useState({});
   const checkQueue = useRef([]);
   const checking = useRef(false);
+  const checkedUrls = useRef(new Set());
   const tabScrollRef = useRef(null);
   const [topH, setTopH] = useState(0);
   const [page, setPage] = useState(1);
@@ -315,9 +316,9 @@ export default function App({ mode, setMode, dark }) {
     const add = [];
     Object.values(results).forEach(arr => {
       (arr || []).forEach(it => {
-        if (it.kind !== '115' || !it.url || seen.has(it.url)) return;
+        if (it.kind !== '115' || !it.url || seen.has(it.url) || checkedUrls.current.has(it.url)) return;
         seen.add(it.url);
-        if (!checks[it.url]) add.push(it);
+        if (!checks[it.url]) { checkedUrls.current.add(it.url); add.push(it); }
       });
     });
     if (add.length) {
