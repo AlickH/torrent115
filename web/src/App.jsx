@@ -131,6 +131,11 @@ export default function App({ mode, setMode, dark }) {
   const [localSavePath, setLocalSavePath] = useState('/vol1/1000/Downloads');
   const [localMoveEnabled, setLocalMoveEnabled] = useState(true);
   const [localDonePath, setLocalDonePath] = useState('/vol1/1000/Downloads/Done');
+  const [localClient, setLocalClient] = useState('qbt_local');
+  const [localQbtUrl, setLocalQbtUrl] = useState('http://127.0.0.1:8080');
+  const [localQbtUser, setLocalQbtUser] = useState('admin');
+  const [localQbtPassword, setLocalQbtPassword] = useState('');
+  const [localQbtSock, setLocalQbtSock] = useState('/run/qbt.sock');
   const [accUser, setAccUser] = useState('');
   const [accOld, setAccOld] = useState('');
   const [accNew, setAccNew] = useState('');
@@ -440,7 +445,12 @@ export default function App({ mode, setMode, dark }) {
     if (cfg.local_save_path !== undefined) setLocalSavePath(cfg.local_save_path || '');
     setLocalMoveEnabled(cfg.local_move_enabled !== false);
     if (cfg.local_done_path !== undefined) setLocalDonePath(cfg.local_done_path || '');
-  }, [cfg?.local_save_path, cfg?.local_move_enabled, cfg?.local_done_path]);
+    if (cfg.local_client) setLocalClient(cfg.local_client);
+    if (cfg.local_qbt_url !== undefined) setLocalQbtUrl(cfg.local_qbt_url || '');
+    if (cfg.local_qbt_user !== undefined) setLocalQbtUser(cfg.local_qbt_user || '');
+    if (cfg.local_qbt_password !== undefined) setLocalQbtPassword(cfg.local_qbt_password || '');
+    if (cfg.local_qbt_sock !== undefined) setLocalQbtSock(cfg.local_qbt_sock || '');
+  }, [cfg?.local_save_path, cfg?.local_move_enabled, cfg?.local_done_path, cfg?.local_client, cfg?.local_qbt_url, cfg?.local_qbt_user, cfg?.local_qbt_password, cfg?.local_qbt_sock]);
 
   // ---- settings helpers ----
   const openSettings = () => {
@@ -462,6 +472,11 @@ export default function App({ mode, setMode, dark }) {
       local_save_path: localSavePath,
       local_move_enabled: localMoveEnabled,
       local_done_path: localDonePath,
+      local_client: localClient,
+      local_qbt_url: localQbtUrl,
+      local_qbt_user: localQbtUser,
+      local_qbt_password: localQbtPassword,
+      local_qbt_sock: localQbtSock,
     };
     if (tmdbText) body.tmdb_api_key = tmdbText;
     if (cookieText) body.p115_cookie = cookieText;
@@ -640,6 +655,11 @@ export default function App({ mode, setMode, dark }) {
               localSavePath={localSavePath} setLocalSavePath={setLocalSavePath}
               localMoveEnabled={localMoveEnabled} setLocalMoveEnabled={setLocalMoveEnabled}
               localDonePath={localDonePath} setLocalDonePath={setLocalDonePath}
+              localClient={localClient} setLocalClient={setLocalClient}
+              localQbtUrl={localQbtUrl} setLocalQbtUrl={setLocalQbtUrl}
+              localQbtUser={localQbtUser} setLocalQbtUser={setLocalQbtUser}
+              localQbtPassword={localQbtPassword} setLocalQbtPassword={setLocalQbtPassword}
+              localQbtSock={localQbtSock} setLocalQbtSock={setLocalQbtSock}
             /></Suspense>
           </div>
         ) : null}
@@ -706,6 +726,11 @@ export default function App({ mode, setMode, dark }) {
           localSavePath={localSavePath} setLocalSavePath={setLocalSavePath}
           localMoveEnabled={localMoveEnabled} setLocalMoveEnabled={setLocalMoveEnabled}
           localDonePath={localDonePath} setLocalDonePath={setLocalDonePath}
+          localClient={localClient} setLocalClient={setLocalClient}
+          localQbtUrl={localQbtUrl} setLocalQbtUrl={setLocalQbtUrl}
+          localQbtUser={localQbtUser} setLocalQbtUser={setLocalQbtUser}
+          localQbtPassword={localQbtPassword} setLocalQbtPassword={setLocalQbtPassword}
+          localQbtSock={localQbtSock} setLocalQbtSock={setLocalQbtSock}
         />
         </Suspense>
       ) : null}

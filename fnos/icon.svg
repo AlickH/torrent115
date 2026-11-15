@@ -6,8 +6,8 @@
       <stop offset="1" stop-color="#0a52d0"/>
     </linearGradient>
     <radialGradient id="gloss" cx="0.28" cy="0.12" r="0.9">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/>
-      <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.04"/>
       <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="glyph" x1="0" y1="0" x2="0" y2="1">
@@ -20,7 +20,7 @@
   </defs>
   <rect width="256" height="256" rx="58" fill="url(#bg)"/>
   <rect width="256" height="256" rx="58" fill="url(#gloss)"/>
-  <rect x="0.5" y="0.5" width="255" height="255" rx="57.5" fill="none" stroke="#ffffff" stroke-opacity="0.22"/>
+  <rect x="0.5" y="0.5" width="255" height="255" rx="57.5" fill="none" stroke="#ffffff" stroke-opacity="0.14"/>
   <g filter="url(#soft)">
     <path d="M76 58v88a52 52 0 0 0 104 0V58" fill="none" stroke="url(#glyph)" stroke-width="25" stroke-linecap="round"/>
     <path d="M76 58h37v46H76z" fill="url(#glyph)"/>

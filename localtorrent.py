@@ -3,6 +3,7 @@
 import os
 import urllib.parse
 
+import requests
 import requests_unixsocket
 
 SOCK = "/run/qbt.sock"
@@ -11,19 +12,31 @@ USER = "admin"
 
 
 class LocalQbt:
-    def __init__(self):
-        self.session = requests_unixsocket.Session()
-        self.base = "http+unix://" + urllib.parse.quote(SOCK, safe="")
+    def __init__(self, cfg=None):
+        cfg = cfg or {}
+        self.mode = cfg.get("local_client") or "qbt_local"
         self.ok = False
+        if self.mode == "qbt_webui":
+            self.session = requests.Session()
+            self.base = (cfg.get("local_qbt_url") or "http://127.0.0.1:8080").rstrip("/")
+            self.user = cfg.get("local_qbt_user") or USER
+            self.password = cfg.get("local_qbt_password") or ""
+        else:
+            self.session = requests_unixsocket.Session()
+            sock = cfg.get("local_qbt_sock") or SOCK
+            self.base = "http+unix://" + urllib.parse.quote(sock, safe="")
+            self.user = USER
+            self.password = None
 
     def login(self):
-        try:
-            pw = open(PW_FILE, encoding="utf-8").read().strip()
-        except Exception:
-            return False
+        if self.mode != "qbt_webui":
+            try:
+                self.password = open(PW_FILE, encoding="utf-8").read().strip()
+            except Exception:
+                return False
         try:
             r = self.session.post(self.base + "/api/v2/auth/login",
-                                  data={"username": USER, "password": pw}, timeout=10)
+                                  data={"username": self.user, "password": self.password}, timeout=10)
             self.ok = r.status_code == 200 and r.text.strip() == "Ok."
         except Exception:
             self.ok = False
@@ -104,7 +117,7 @@ def move_completed(cfg):
     done = (cfg.get("local_done_path") or "").strip()
     if not done:
         return 0
-    q = LocalQbt()
+    q = LocalQbt(cfg)
     if not q.login():
         return 0
     moved = 0

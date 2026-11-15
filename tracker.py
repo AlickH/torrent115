@@ -14,18 +14,16 @@ from localtorrent import has_progress, is_completed
 _LOCAL = {"client": None}
 
 
-def _local_client():
-    if _LOCAL["client"] is None:
-        try:
-            c = localtorrent.LocalQbt()
-            _LOCAL["client"] = c if c.login() else False
-        except Exception:
-            _LOCAL["client"] = False
-    return _LOCAL["client"] or None
+def _local_client(cfg=None):
+    try:
+        c = localtorrent.LocalQbt(cfg)
+        return c if c.login() else None
+    except Exception:
+        return None
 
 
-def _local_del(h):
-    c = _local_client()
+def _local_del(h, cfg=None):
+    c = _local_client(cfg)
     if c and h:
         try:
             c.delete([h])
@@ -701,7 +699,7 @@ def _process_episode(cfg, ep, eff, dry_run, excluded, timeout_min):
         return "fail"
     local_hash = None
     if eff.get("auto_use_local"):
-        lc = _local_client()
+        lc = _local_client(cfg)
         if not lc:
             log(f"[auto] {_label(ep)} 本地下载器未就绪，仅使用 115")
         else:
@@ -737,7 +735,7 @@ def _process_episode(cfg, ep, eff, dry_run, excluded, timeout_min):
             _STATE["pending"].pop(ep["key"], None)
             _save()
         log(f"[auto] {_label(ep)} 云下载完成（已确认）: {desc}")
-        _local_del(local_hash)
+        _local_del(local_hash, cfg)
         _notify_drivemby(cfg, ep, (task or {}).get("file_id"))
         return "done"
     if h and task:
@@ -789,7 +787,7 @@ def run_once(cfg, dry_run=False, only_shows=None):
         local_delete_after = []
         local_hashes = [v.get("local_hash") for v in (_STATE.get("pending") or {}).values() if v.get("local_hash")]
         local_map = {}
-        lc = _local_client() if local_hashes else None
+        lc = _local_client(cfg) if local_hashes else None
         if lc and local_hashes:
             try:
                 local_map = lc.torrents(local_hashes)
@@ -906,7 +904,7 @@ def run_once(cfg, dry_run=False, only_shows=None):
                 except Exception:
                     pass
         for lh in local_delete_after:
-            _local_del(lh)
+            _local_del(lh, cfg)
         for nep, nfid in notify_after:
             _notify_drivemby(cfg, nep, nfid)
         for ep, tried in retry_eps:
