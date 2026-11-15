@@ -608,15 +608,15 @@ export default function App({ mode, setMode, dark }) {
         </div>
         </>) : view === 'auto' ? (
           <div style={{ flex: 1, minHeight: 0 }}>
-            <TrackingModals {...track} cfg={cfg} token={token} inline />
+            <Suspense fallback={null}><TrackingModals {...track} cfg={cfg} token={token} inline /></Suspense>
           </div>
         ) : view === 'trending' ? (
           <div style={{ flex: 1, minHeight: 0 }}>
-            <TrendingModal open={view === 'trending'} inline track={track} onDirectSearch={t => { setView('search'); setQuery(t); doSearch(t); }} />
+            <Suspense fallback={null}><TrendingModal open={view === 'trending'} inline track={track} onDirectSearch={t => { setView('search'); setQuery(t); doSearch(t); }} /></Suspense>
           </div>
         ) : view === 'settings' ? (
           <div style={{ flex: 1, minHeight: 0 }}>
-            <SettingsModal {...track} inline mode={mode} setMode={setMode} cfg={cfg}
+            <Suspense fallback={null}><SettingsModal {...track} inline mode={mode} setMode={setMode} cfg={cfg}
               onAccount={() => setAccountOpen(true)}
               test115={test115}
               onSave={async () => { await track.saveAuto(); await saveSettings(); }}
@@ -625,7 +625,7 @@ export default function App({ mode, setMode, dark }) {
               tmdbText={tmdbText} setTmdbText={setTmdbText}
               pansouUrl={pansouUrl} setPansouUrl={setPansouUrl} bitmagnetUrl={bitmagnetUrl} setBitmagnetUrl={setBitmagnetUrl}
               outboundProxy={outboundProxy} setOutboundProxy={setOutboundProxy}
-            />
+            /></Suspense>
           </div>
         ) : null}
       </div>
