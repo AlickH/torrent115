@@ -21,6 +21,7 @@ import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
+import localtorrent
 import tracker as auto_track
 from flask import Flask, Response, jsonify, redirect, request, send_file, send_from_directory, session
 
@@ -268,6 +269,17 @@ def monitor_tick():
     save_monitor_state(state)
 
 
+def local_move_loop():
+    while True:
+        try:
+            cfg = load_config()
+            if cfg.get("local_move_enabled"):
+                localtorrent.move_completed(cfg)
+        except Exception as e:
+            print(f"[localdl] ERROR {e}", flush=True)
+        time.sleep(60)
+
+
 def monitor_loop():
     try:
         cfg = load_config()
@@ -366,4 +378,5 @@ if __name__ == "__main__":
     auto_track.configure(DATA_DIR, load_config, search_site, search_pansou,
                          p115_add_urls, share_transfer, p115_task_list, p115_task_del, auto_drivemby_refresh, search_all_sources)
     threading.Thread(target=auto_track.loop, daemon=True).start()
+    threading.Thread(target=local_move_loop, daemon=True).start()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8099")))

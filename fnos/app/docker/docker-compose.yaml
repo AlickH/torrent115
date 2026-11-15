@@ -6,7 +6,7 @@ services:
     network_mode: host
     volumes:
       - "${TRIM_PKGVAR}/data:/data"
-      # 可选：启用本地下载器时取消注释（需要 fnOS 下载中心已启用）
-      # - /usr/trim/var/downloadcenter/1000/qbt.sock:/run/qbt.sock
+      # fnOS 下载中心 qBittorrent socket（本地下载器功能）
+      - /usr/trim/var/downloadcenter/1000/qbt.sock:/run/qbt.sock
     environment:
       - TZ=Asia/Shanghai

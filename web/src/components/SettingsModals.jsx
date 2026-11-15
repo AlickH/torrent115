@@ -13,6 +13,7 @@ export function SettingsModal(props) {
     tmdbText, setTmdbText,
     pansouUrl, setPansouUrl, bitmagnetUrl, setBitmagnetUrl, outboundProxy, setOutboundProxy,
     maxEpisodes, setMaxEpisodes, taskTimeout, setTaskTimeout, waitTimeout, setWaitTimeout, drivembyEnabled, setDrivembyEnabled,
+    localSavePath, setLocalSavePath, localMoveEnabled, setLocalMoveEnabled, localDonePath, setLocalDonePath,
     autoForm, setAutoForm, auto, traktToken, setTraktToken, revealTrakt,
     startTraktOauth, traktOauthError,
     aiPresets, newAiPreset, editAiPreset, deleteAiPreset,
@@ -24,6 +25,16 @@ export function SettingsModal(props) {
         <Form.Item label="主题">
           <Segmented value={mode || 'auto'} onChange={setMode}
             options={[{ label: '跟随系统', value: 'auto' }, { label: '亮色', value: 'light' }, { label: '暗色', value: 'dark' }]} />
+        </Form.Item>
+        <Divider orientation="left" style={{ margin: '0 0 12px' }}>本地下载器</Divider>
+        <Form.Item label="保存目录">
+          <Input value={localSavePath} onChange={e => setLocalSavePath(e.target.value)} placeholder="/vol1/1000/Downloads" />
+        </Form.Item>
+        <Form.Item label="完成后移动到目标目录">
+          <Switch checked={localMoveEnabled} onChange={setLocalMoveEnabled} />
+        </Form.Item>
+        <Form.Item label="移动目标目录">
+          <Input value={localDonePath} onChange={e => setLocalDonePath(e.target.value)} disabled={!localMoveEnabled} placeholder="/vol1/1000/Downloads/Done" />
         </Form.Item>
         <Divider orientation="left" style={{ margin: '0 0 12px' }}>115 账号</Divider>
         <Form.Item label="115 Cookie">

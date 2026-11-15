@@ -128,6 +128,9 @@ export default function App({ mode, setMode, dark }) {
   const [targetCid, setTargetCid] = useState('');
   const [transferCid, setTransferCid] = useState('');
   const [outboundProxy, setOutboundProxy] = useState('');
+  const [localSavePath, setLocalSavePath] = useState('/vol1/1000/Downloads');
+  const [localMoveEnabled, setLocalMoveEnabled] = useState(true);
+  const [localDonePath, setLocalDonePath] = useState('/vol1/1000/Downloads/Done');
   const [accUser, setAccUser] = useState('');
   const [accOld, setAccOld] = useState('');
   const [accNew, setAccNew] = useState('');
@@ -432,6 +435,12 @@ export default function App({ mode, setMode, dark }) {
   );
 
   const track = useAutoTrack({ message, setCfg });
+  useEffect(() => {
+    if (!cfg) return;
+    if (cfg.local_save_path !== undefined) setLocalSavePath(cfg.local_save_path || '');
+    setLocalMoveEnabled(cfg.local_move_enabled !== false);
+    if (cfg.local_done_path !== undefined) setLocalDonePath(cfg.local_done_path || '');
+  }, [cfg?.local_save_path, cfg?.local_move_enabled, cfg?.local_done_path]);
 
   // ---- settings helpers ----
   const openSettings = () => {
@@ -450,6 +459,9 @@ export default function App({ mode, setMode, dark }) {
       p115_target_cid: targetCid,
       p115_transfer_cid: transferCid,
       outbound_proxy: outboundProxy,
+      local_save_path: localSavePath,
+      local_move_enabled: localMoveEnabled,
+      local_done_path: localDonePath,
     };
     if (tmdbText) body.tmdb_api_key = tmdbText;
     if (cookieText) body.p115_cookie = cookieText;
@@ -625,6 +637,9 @@ export default function App({ mode, setMode, dark }) {
               tmdbText={tmdbText} setTmdbText={setTmdbText}
               pansouUrl={pansouUrl} setPansouUrl={setPansouUrl} bitmagnetUrl={bitmagnetUrl} setBitmagnetUrl={setBitmagnetUrl}
               outboundProxy={outboundProxy} setOutboundProxy={setOutboundProxy}
+              localSavePath={localSavePath} setLocalSavePath={setLocalSavePath}
+              localMoveEnabled={localMoveEnabled} setLocalMoveEnabled={setLocalMoveEnabled}
+              localDonePath={localDonePath} setLocalDonePath={setLocalDonePath}
             /></Suspense>
           </div>
         ) : null}
@@ -688,6 +703,9 @@ export default function App({ mode, setMode, dark }) {
           setBitmagnetUrl={setBitmagnetUrl}
           outboundProxy={outboundProxy}
           setOutboundProxy={setOutboundProxy}
+          localSavePath={localSavePath} setLocalSavePath={setLocalSavePath}
+          localMoveEnabled={localMoveEnabled} setLocalMoveEnabled={setLocalMoveEnabled}
+          localDonePath={localDonePath} setLocalDonePath={setLocalDonePath}
         />
         </Suspense>
       ) : null}

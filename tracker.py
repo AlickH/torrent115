@@ -706,7 +706,7 @@ def _process_episode(cfg, ep, eff, dry_run, excluded, timeout_min):
             log(f"[auto] {_label(ep)} 本地下载器未就绪，仅使用 115")
         else:
             try:
-                lc.add_magnet(pick["url"])
+                lc.add_magnet(pick["url"], savepath=cfg.get("local_save_path") or "/vol1/1000/Downloads")
                 local_hash = h
                 log(f"[auto] {_label(ep)} 已同时加入本地下载器")
             except Exception as e:
