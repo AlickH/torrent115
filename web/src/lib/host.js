@@ -10,6 +10,30 @@ export function hostApp() {
   return app;
 }
 
+function findPath(value) {
+  if (typeof value === 'string') return value.startsWith('/') ? value : null;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const p = findPath(item);
+      if (p) return p;
+    }
+    return null;
+  }
+  if (value && typeof value === 'object') {
+    for (const key of ['path', 'paths', 'data', 'result', 'files', 'value']) {
+      if (key in value) {
+        const p = findPath(value[key]);
+        if (p) return p;
+      }
+    }
+    for (const v of Object.values(value)) {
+      const p = findPath(v);
+      if (p) return p;
+    }
+  }
+  return null;
+}
+
 export async function pickFolder(title) {
   const a = hostApp();
   if (!a) return { error: '当前环境不支持系统文件夹选择器' };
@@ -23,9 +47,9 @@ export async function pickFolder(title) {
   for (const run of attempts) {
     try {
       const r = await run();
-      if (Array.isArray(r)) return { path: r[0] || null };
-      if (r && Array.isArray(r.data)) return { path: r.data[0] || null };
-      // undefined / 空结果 = 用户取消，直接返回，不再尝试下一个选择器
+      const path = findPath(r);
+      if (path) return { path };
+      // 打开过选择器但用户取消：直接结束，不继续弹下一个
       return { path: null };
     } catch (e) {
       lastError = e;
