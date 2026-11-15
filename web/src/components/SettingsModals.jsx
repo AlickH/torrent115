@@ -4,6 +4,7 @@ import {
 } from 'antd';
 import { EyeOutlined, QrcodeOutlined } from '@ant-design/icons';
 import { api, APP_BASE } from '../api.js';
+import { pickFolder } from '../lib/host.js';
 
 export function SettingsModal(props) {
   const {
@@ -17,6 +18,7 @@ export function SettingsModal(props) {
     localClient, setLocalClient, localQbtUrl, setLocalQbtUrl, localQbtUser, setLocalQbtUser, localQbtPassword, setLocalQbtPassword, localQbtSock, setLocalQbtSock,
     aria2Url, setAria2Url, aria2Secret, setAria2Secret,
     transmissionUrl, setTransmissionUrl, transmissionUser, setTransmissionUser, transmissionPassword, setTransmissionPassword,
+    autoUpload115, setAutoUpload115, p115UploadCid, setP115UploadCid, uploadDeleteLocal, setUploadDeleteLocal,
     autoForm, setAutoForm, auto, traktToken, setTraktToken, revealTrakt,
     startTraktOauth, traktOauthError,
     aiPresets, newAiPreset, editAiPreset, deleteAiPreset,
@@ -141,13 +143,29 @@ export function SettingsModal(props) {
           </Typography.Paragraph>
         ) : null}
         <Form.Item label="保存目录">
-          <Input value={localSavePath} onChange={e => setLocalSavePath(e.target.value)} placeholder="/vol1/1000/Downloads" />
+          <Space.Compact style={{ width: '100%' }}>
+            <Input value={localSavePath} onChange={e => setLocalSavePath(e.target.value)} placeholder="/vol1/1000/Downloads" />
+            <Button onClick={async () => { const p = await pickFolder('选择下载保存目录'); if (p) setLocalSavePath(p); }}>选择</Button>
+          </Space.Compact>
         </Form.Item>
         <Form.Item label="完成后移动到目标目录">
           <Switch checked={localMoveEnabled} onChange={setLocalMoveEnabled} />
         </Form.Item>
         <Form.Item label="移动目标目录">
-          <Input value={localDonePath} onChange={e => setLocalDonePath(e.target.value)} disabled={!localMoveEnabled} placeholder="/vol1/1000/Downloads/Done" />
+          <Space.Compact style={{ width: '100%' }}>
+            <Input value={localDonePath} onChange={e => setLocalDonePath(e.target.value)} disabled={!localMoveEnabled} placeholder="/vol1/1000/Downloads/Done" />
+            <Button disabled={!localMoveEnabled} onClick={async () => { const p = await pickFolder('选择完成目录'); if (p) setLocalDonePath(p); }}>选择</Button>
+          </Space.Compact>
+        </Form.Item>
+        <Divider orientation="left" style={{ margin: '4px 0 12px' }}>上传到 115</Divider>
+        <Form.Item label="下载完成后自动上传到 115">
+          <Switch checked={autoUpload115} onChange={setAutoUpload115} />
+        </Form.Item>
+        <Form.Item label="上传目标目录 CID（留空=根目录 / 云下载目录）">
+          <Input value={p115UploadCid} onChange={e => setP115UploadCid(e.target.value)} placeholder="例如 3491805844004144456" />
+        </Form.Item>
+        <Form.Item label="上传成功后删除本地任务">
+          <Switch checked={uploadDeleteLocal} onChange={setUploadDeleteLocal} />
         </Form.Item>
 
         <Divider orientation="left" style={{ margin: '4px 0 12px' }}>Trakt 凭据</Divider>

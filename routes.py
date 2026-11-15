@@ -275,7 +275,7 @@ def set_config():
     _merge_secret_list("auto_presets", ("ai_api_key", "trakt_token"))
 
     for k in ("pansou_url", "bitmagnet_url", "outbound_proxy", "p115_target_cid", "p115_transfer_cid",
-              "auto_enabled", "auto_interval", "auto_days", "auto_max_episodes", "auto_strict_match", "auto_task_timeout", "auto_wait_timeout", "auto_use_local", "local_client", "local_qbt_url", "local_qbt_user", "local_qbt_password", "local_qbt_sock", "aria2_url", "aria2_secret", "transmission_url", "transmission_user", "transmission_password", "local_save_path", "local_move_enabled", "local_done_path", "auto_presets", "auto_tv_preset", "auto_movie_preset", "ai_presets", "calendar_source", "auto_shows", "auto_res_order", "auto_rank_order", "auto_seed_tiers", "auto_size_big", "auto_source_order",
+              "auto_enabled", "auto_interval", "auto_days", "auto_max_episodes", "auto_strict_match", "auto_task_timeout", "auto_wait_timeout", "auto_use_local", "local_client", "local_qbt_url", "local_qbt_user", "local_qbt_password", "local_qbt_sock", "aria2_url", "aria2_secret", "transmission_url", "transmission_user", "transmission_password", "local_save_path", "local_move_enabled", "local_done_path", "auto_upload_115", "p115_upload_cid", "auto_upload_delete_local", "auto_presets", "auto_tv_preset", "auto_movie_preset", "ai_presets", "calendar_source", "auto_shows", "auto_res_order", "auto_rank_order", "auto_seed_tiers", "auto_size_big", "auto_source_order",
               "auto_max_size_gb", "auto_min_seeders", "auto_codec", "auto_dry_run",
               "ai_enabled", "ai_base_url", "ai_model", "trakt_client_id",
               "tmdb_api_key", "monitor_enabled", "monitor_interval", "monitor_cid",
@@ -503,7 +503,7 @@ def api_ai_test():
 def api_auto_status():
     cfg = load_config()
     pub = {k: cfg.get(k) for k in ("auto_enabled", "auto_interval", "auto_days", "auto_max_episodes",
-                                   "auto_strict_match", "auto_task_timeout", "auto_wait_timeout", "auto_use_local", "local_client", "local_qbt_url", "local_qbt_user", "local_qbt_password", "local_qbt_sock", "aria2_url", "aria2_secret", "transmission_url", "transmission_user", "transmission_password", "local_save_path", "local_move_enabled", "local_done_path", "auto_presets", "auto_tv_preset", "auto_movie_preset",
+                                   "auto_strict_match", "auto_task_timeout", "auto_wait_timeout", "auto_use_local", "local_client", "local_qbt_url", "local_qbt_user", "local_qbt_password", "local_qbt_sock", "aria2_url", "aria2_secret", "transmission_url", "transmission_user", "transmission_password", "local_save_path", "local_move_enabled", "local_done_path", "auto_upload_115", "p115_upload_cid", "auto_upload_delete_local", "auto_presets", "auto_tv_preset", "auto_movie_preset",
                                    "ai_presets", "calendar_source", "auto_shows", "auto_res_order",
                                    "auto_max_size_gb", "auto_min_seeders", "auto_codec",
                                    "auto_dry_run", "ai_enabled", "ai_base_url", "ai_model", "trakt_client_id", "drivemby_enabled", "auto_rank_order", "auto_seed_tiers", "auto_size_big", "auto_source_order")}

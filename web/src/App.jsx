@@ -141,6 +141,9 @@ export default function App({ mode, setMode, dark }) {
   const [transmissionUrl, setTransmissionUrl] = useState('http://127.0.0.1:9091/transmission/rpc');
   const [transmissionUser, setTransmissionUser] = useState('');
   const [transmissionPassword, setTransmissionPassword] = useState('');
+  const [autoUpload115, setAutoUpload115] = useState(false);
+  const [p115UploadCid, setP115UploadCid] = useState('');
+  const [uploadDeleteLocal, setUploadDeleteLocal] = useState(false);
   const [accUser, setAccUser] = useState('');
   const [accOld, setAccOld] = useState('');
   const [accNew, setAccNew] = useState('');
@@ -460,7 +463,10 @@ export default function App({ mode, setMode, dark }) {
     if (cfg.transmission_url !== undefined) setTransmissionUrl(cfg.transmission_url || '');
     if (cfg.transmission_user !== undefined) setTransmissionUser(cfg.transmission_user || '');
     if (cfg.transmission_password !== undefined) setTransmissionPassword(cfg.transmission_password || '');
-  }, [cfg?.local_save_path, cfg?.local_move_enabled, cfg?.local_done_path, cfg?.local_client, cfg?.local_qbt_url, cfg?.local_qbt_user, cfg?.local_qbt_password, cfg?.local_qbt_sock, cfg?.aria2_url, cfg?.aria2_secret, cfg?.transmission_url, cfg?.transmission_user, cfg?.transmission_password]);
+    setAutoUpload115(cfg.auto_upload_115 === true);
+    if (cfg.p115_upload_cid !== undefined) setP115UploadCid(cfg.p115_upload_cid || '');
+    setUploadDeleteLocal(cfg.auto_upload_delete_local === true);
+  }, [cfg?.local_save_path, cfg?.local_move_enabled, cfg?.local_done_path, cfg?.local_client, cfg?.local_qbt_url, cfg?.local_qbt_user, cfg?.local_qbt_password, cfg?.local_qbt_sock, cfg?.aria2_url, cfg?.aria2_secret, cfg?.transmission_url, cfg?.transmission_user, cfg?.transmission_password, cfg?.auto_upload_115, cfg?.p115_upload_cid, cfg?.auto_upload_delete_local]);
 
   // ---- settings helpers ----
   const openSettings = () => {
@@ -492,6 +498,9 @@ export default function App({ mode, setMode, dark }) {
       transmission_url: transmissionUrl,
       transmission_user: transmissionUser,
       transmission_password: transmissionPassword,
+      auto_upload_115: autoUpload115,
+      p115_upload_cid: p115UploadCid,
+      auto_upload_delete_local: uploadDeleteLocal,
     };
     if (tmdbText) body.tmdb_api_key = tmdbText;
     if (cookieText) body.p115_cookie = cookieText;
@@ -680,6 +689,9 @@ export default function App({ mode, setMode, dark }) {
               transmissionUrl={transmissionUrl} setTransmissionUrl={setTransmissionUrl}
               transmissionUser={transmissionUser} setTransmissionUser={setTransmissionUser}
               transmissionPassword={transmissionPassword} setTransmissionPassword={setTransmissionPassword}
+              autoUpload115={autoUpload115} setAutoUpload115={setAutoUpload115}
+              p115UploadCid={p115UploadCid} setP115UploadCid={setP115UploadCid}
+              uploadDeleteLocal={uploadDeleteLocal} setUploadDeleteLocal={setUploadDeleteLocal}
             /></Suspense>
           </div>
         ) : null}
@@ -756,6 +768,9 @@ export default function App({ mode, setMode, dark }) {
           transmissionUrl={transmissionUrl} setTransmissionUrl={setTransmissionUrl}
           transmissionUser={transmissionUser} setTransmissionUser={setTransmissionUser}
           transmissionPassword={transmissionPassword} setTransmissionPassword={setTransmissionPassword}
+          autoUpload115={autoUpload115} setAutoUpload115={setAutoUpload115}
+          p115UploadCid={p115UploadCid} setP115UploadCid={setP115UploadCid}
+          uploadDeleteLocal={uploadDeleteLocal} setUploadDeleteLocal={setUploadDeleteLocal}
         />
         </Suspense>
       ) : null}

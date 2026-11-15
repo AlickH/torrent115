@@ -22,6 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import requests
 import localtorrent
+import p115upload
 import tracker as auto_track
 from flask import Flask, Response, jsonify, redirect, request, send_file, send_from_directory, session
 
@@ -279,6 +280,7 @@ def local_move_loop():
             cfg = load_config()
             if cfg.get("local_move_enabled"):
                 localtorrent.move_completed(cfg)
+            p115upload.upload_completed(cfg)
         except Exception as e:
             print(f"[localdl] ERROR {e}", flush=True)
         time.sleep(60)
