@@ -11,6 +11,7 @@ distributor_url=https://github.com/AlickH
 os_min_version=0.8.6
 desktop_uidir=ui
 desktop_applaunchname=torrent115.main
+micro_app=true
 service_port=8099
 checkport=false
 ctl_stop=true
