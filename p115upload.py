@@ -114,7 +114,15 @@ def upload_completed(cfg):
         if not localtorrent.is_completed(t):
             continue
         h = (t.get("hash") or "").lower()
-        if not h or h in state:
+        if not h:
+            continue
+        prev = state.get(h)
+        if isinstance(prev, dict):
+            if prev.get("ok"):
+                continue
+            if time.time() - int(prev.get("ts") or 0) < 600:
+                continue
+        elif prev:
             continue
         src = (t.get("content_path") or "").strip()
         if not src:
@@ -124,12 +132,14 @@ def upload_completed(cfg):
             continue
         try:
             upload_file(cfg, src)
-            state[h] = int(time.time())
+            state[h] = {"ts": int(time.time()), "ok": True}
             _save_state(state)
             uploaded += 1
             print(f"[p115upload] uploaded {src}", flush=True)
             if cfg.get("auto_upload_delete_local"):
                 q.delete([h])
         except Exception as e:
+            state[h] = {"ts": int(time.time()), "ok": False, "error": str(e)[:200]}
+            _save_state(state)
             print(f"[p115upload] failed {src}: {e}", flush=True)
     return uploaded
