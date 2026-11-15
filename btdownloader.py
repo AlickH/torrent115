@@ -1,134 +1,90 @@
 #!/usr/bin/env python3
-"""内置 BT 下载器：基于 libtorrent 的极简下载管理。"""
+"""内置 BT 下载器：通过本机 Transmission RPC 管理。"""
 import os
 import threading
-import time
+import requests
 
-import libtorrent as lt
+RPC = "http://127.0.0.1:9092/transmission/rpc"
+AUTH = ("t115", "t115pass")
+_s = requests.Session()
+_s.auth = AUTH
+_sid = ""
+_lock = threading.Lock()
 
-_lock = threading.RLock()
-_session = None
-_handles = {}
 
-
-def _get_session():
-    global _session
-    cfg = {}
-    port = 6881
+def _call(method, arguments=None):
+    global _sid
     with _lock:
-        if _session is None:
-            settings = {
-                "listen_interfaces": "0.0.0.0:6881,[::]:6881",
-                "enable_dht": True,
-                "enable_lsd": True,
-                "enable_upnp": True,
-                "enable_natpmp": True,
-                "alert_mask": lt.alert.category_t.error_notification | lt.alert.category_t.status_notification,
-                "download_rate_limit": 0,
-                "upload_rate_limit": 0,
-                "dht_bootstrap_nodes": "router.bittorrent.com:6881,dht.transmissionbt.com:6881,router.utorrent.com:6881",
-            }
-            _session = lt.session(settings)
-            _session.start_dht()
-        return _session
-
-
-def _save_path(cfg):
-    path = (cfg.get("local_save_path") or "/data/downloads").strip() or "/data/downloads"
-    os.makedirs(path, exist_ok=True)
-    return path
+        for _ in range(2):
+            r = _s.post(RPC, json={"method": method, "arguments": arguments or {}}, timeout=20,
+                        headers={"X-Transmission-Session-Id": _sid})
+            if r.status_code == 409:
+                _sid = r.headers.get("X-Transmission-Session-Id", "")
+                continue
+            r.raise_for_status()
+            data = r.json()
+            if data.get("result") != "success":
+                raise RuntimeError(data.get("result") or "Transmission RPC 失败")
+            return data.get("arguments") or {}
+    raise RuntimeError("Transmission RPC 会话初始化失败")
 
 
 def add_magnet(cfg, magnet):
-    s = _get_session()
-    params = lt.parse_magnet_uri(magnet)
-    params.save_path = _save_path(cfg)
-    h = s.add_torrent(params)
-    with _lock:
-        _handles[str(h.info_hash())] = h
-    return str(h.info_hash())
-
-
-def _state_name(h):
-    st = h.status()
-    if h.is_valid():
-        pass
-    if st.paused:
-        return "paused"
-    if st.state == lt.torrent_status.seeding:
-        return "seeding"
-    if st.state == lt.torrent_status.finished:
-        return "finished"
-    if st.state == lt.torrent_status.downloading:
-        return "downloading"
-    if st.state == lt.torrent_status.checking_files:
-        return "checking"
-    return "queued"
+    path = (cfg.get("local_save_path") or os.environ.get("T115_DOWNLOAD_DIR") or "/data/downloads").strip()
+    os.makedirs(path, exist_ok=True)
+    _call("torrent-add", {"filename": magnet, "download-dir": path, "paused": False})
+    return True
 
 
 def tasks():
-    s = _get_session()
+    args = _call("torrent-get", {"fields": ["id", "name", "hashString", "percentDone", "status", "rateDownload",
+                                             "rateUpload", "totalSize", "peersSendingToWe", "peersGettingFromUs",
+                                             "downloadDir", "leftUntilDone"]})
     out = []
-    with _lock:
-        current = {}
-        for h in s.get_torrents():
-            hh = str(h.info_hash())
-            current[hh] = h
-            _handles.setdefault(hh, h)
-        _handles.update(current)
-    for hh, h in list(_handles.items()):
-        try:
-            st = h.status()
-            if not st.has_metadata:
-                name = st.name or hh[:12]
-                out.append({"hash": hh, "name": name, "progress": 0, "state": "metadata",
-                            "download_rate": 0, "upload_rate": 0, "total": 0, "done": 0,
-                            "seeders": 0, "peers": 0, "save_path": st.save_path})
-                continue
-            out.append({
-                "hash": hh,
-                "name": st.name,
-                "progress": round(float(st.progress) * 100, 1),
-                "state": _state_name(h),
-                "download_rate": int(st.download_rate),
-                "upload_rate": int(st.upload_rate),
-                "total": int(st.total_wanted),
-                "done": int(st.total_wanted_done),
-                "seeders": int(st.num_seeds),
-                "peers": int(st.num_peers),
-                "save_path": st.save_path,
-            })
-        except Exception:
-            continue
+    states = {0: "paused", 1: "checking", 2: "checking", 3: "metadata", 4: "downloading", 5: "queued", 6: "seeding"}
+    for t in args.get("torrents", []):
+        out.append({
+            "hash": t.get("hashString", ""),
+            "id": t.get("id"),
+            "name": t.get("name") or "",
+            "progress": round(float(t.get("percentDone") or 0) * 100, 1),
+            "state": states.get(t.get("status"), "unknown"),
+            "download_rate": int(t.get("rateDownload") or 0),
+            "upload_rate": int(t.get("rateUpload") or 0),
+            "total": int(t.get("totalSize") or 0),
+            "done": int(t.get("totalSize") or 0) - int(t.get("leftUntilDone") or 0),
+            "seeders": 0, "peers": int(t.get("peersSendingToWe") or 0),
+            "save_path": t.get("downloadDir") or "",
+        })
     return out
 
 
+def _id(hash_):
+    for t in tasks():
+        if t["hash"].lower() == (hash_ or "").lower():
+            return t["id"]
+    return None
+
+
 def pause(hash_):
-    with _lock:
-        h = _handles.get(hash_)
-    if h:
-        h.pause()
-        return True
-    return False
+    i = _id(hash_)
+    if i is None:
+        return False
+    _call("torrent-stop", {"ids": [i]})
+    return True
 
 
 def resume(hash_):
-    with _lock:
-        h = _handles.get(hash_)
-    if h:
-        h.resume()
-        return True
-    return False
+    i = _id(hash_)
+    if i is None:
+        return False
+    _call("torrent-start", {"ids": [i]})
+    return True
 
 
 def delete(hash_, delete_files=False):
-    with _lock:
-        h = _handles.pop(hash_, None)
-    if not h:
+    i = _id(hash_)
+    if i is None:
         return False
-    s = _get_session()
-    if delete_files:
-        s.remove_torrent(h, lt.options_t.delete_files)
-    else:
-        s.remove_torrent(h)
+    _call("torrent-remove", {"ids": [i], "delete-local-data": bool(delete_files)})
     return True
