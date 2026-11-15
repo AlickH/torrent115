@@ -47,8 +47,8 @@ export async function pickFolder(title) {
   if (!a) return { error: '当前环境不支持系统文件夹选择器' };
   const label = title || '选择文件夹';
   const attempts = [
-    a.pickUserFile && (() => a.pickUserFile({ directory: true, title: label })),
     a.pickFile && (() => a.pickFile({ directory: true, title: label })),
+    a.pickUserFile && (() => a.pickUserFile({ directory: true, title: label })),
     a.pickSharedFile && (() => a.pickSharedFile({ title: label })),
   ].filter(Boolean);
   let lastError = null;
