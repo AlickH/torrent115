@@ -366,17 +366,21 @@ def static_files(filename):
     return resp
 
 
-if __name__ == "__main__":
+def start_runtime():
+    """启动后台线程；开发模式与 WSGI（gunicorn）共用。"""
     os.makedirs(DATA_DIR, exist_ok=True)
     cfg0 = load_config()
     if not cfg0.get("secret_key"):
-        import secrets
         cfg0["secret_key"] = secrets.token_hex(32)
         save_config(cfg0)
-        app.secret_key = cfg0["secret_key"]
+    app.secret_key = cfg0["secret_key"]
     threading.Thread(target=monitor_loop, daemon=True).start()
     auto_track.configure(DATA_DIR, load_config, search_site, search_pansou,
                          p115_add_urls, share_transfer, p115_task_list, p115_task_del, auto_drivemby_refresh, search_all_sources)
     threading.Thread(target=auto_track.loop, daemon=True).start()
     threading.Thread(target=local_move_loop, daemon=True).start()
+
+
+if __name__ == "__main__":
+    start_runtime()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8099")))

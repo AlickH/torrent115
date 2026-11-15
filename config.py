@@ -36,7 +36,7 @@ DEFAULT_CONFIG = {
     "local_qbt_url": "http://127.0.0.1:8080",
     "local_qbt_user": "admin",
     "local_qbt_password": "",
-    "local_qbt_sock": "/run/qbt.sock",
+    "local_qbt_sock": "/downloadcenter/1000/qbt.sock",
     "aria2_url": "http://127.0.0.1:6800/jsonrpc",
     "aria2_secret": "",
     "transmission_url": "http://127.0.0.1:9091/transmission/rpc",
@@ -81,13 +81,21 @@ DEFAULT_CONFIG = {
         "eztv": {"enabled": True, "url": "https://eztvx.to/api/get-torrents", "kind": "eztv"},
         "knaben": {"enabled": True, "url": "https://api.knaben.org/v1", "kind": "knaben"},
         "therarbg": {"enabled": True, "url": "https://therarbg.com/get-posts/keywords:{q}/?format=json", "kind": "therarbg"},
-        "bitmagnet": {"enabled": True, "url": "http://127.0.0.1:3333/graphql", "kind": "bitmagnet"},
+        "bitmagnet": {"enabled": False, "url": "http://127.0.0.1:3333/graphql", "kind": "bitmagnet"},
     },
 }
 
 
 def load_config():
     cfg = json.loads(json.dumps(DEFAULT_CONFIG))
+    fresh = not os.path.exists(CONFIG_PATH)
+    if fresh:
+        user = (os.environ.get("T115_ADMIN_USER") or "").strip()
+        pwd = os.environ.get("T115_ADMIN_PASSWORD") or ""
+        if user:
+            cfg["auth_user"] = user
+        if pwd:
+            cfg["auth_password"] = pwd
     if os.path.exists(CONFIG_PATH):
         try:
             with open(CONFIG_PATH, encoding="utf-8") as f:

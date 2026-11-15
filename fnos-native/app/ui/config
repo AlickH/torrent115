@@ -1,0 +1,14 @@
+{
+  ".url": {
+    "torrent115.main": {
+      "title": "Torrent115",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "protocol": "",
+      "gatewayPrefix": "/app/torrent115",
+      "gatewaySocket": "app.sock",
+      "url": "/app/torrent115",
+      "allUsers": true
+    }
+  }
+}

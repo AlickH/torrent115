@@ -6,7 +6,9 @@ services:
     network_mode: host
     volumes:
       - "${TRIM_PKGVAR}/data:/data"
-      # fnOS 下载中心 qBittorrent socket（本地下载器功能）
-      - /usr/trim/var/downloadcenter/1000/qbt.sock:/run/qbt.sock
+      # fnOS 下载中心目录（可选；不存在时下载器功能自动不可用）
+      - /usr/trim/var/downloadcenter:/downloadcenter:ro
     environment:
       - TZ=Asia/Shanghai
+      - T115_ADMIN_USER=${t115_admin_user:-admin}
+      - T115_ADMIN_PASSWORD=${t115_admin_password:-}

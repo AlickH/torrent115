@@ -9,3 +9,5 @@ artifacts/
 fnos/app/docker/*.tar.gz
 fnos/cmd/offline-image.env
 fnos/app/docker/offline-image.env
+fnos-native/app/server/
+artifacts/

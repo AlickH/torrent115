@@ -1,0 +1,50 @@
+#!/bin/bash
+set -u
+export PATH="/var/apps/python312/target/bin:${PATH}"
+APP_DIR="${TRIM_APPDEST}/server"
+VENV="${TRIM_PKGVAR}/venv"
+PID_FILE="${TRIM_PKGVAR}/app.pid"
+SOCK="${TRIM_APPDEST}/app.sock"
+LOG="${TRIM_PKGVAR}/logs/app.log"
+
+start_app() {
+  if status_app; then return 0; fi
+  [ -x "${VENV}/bin/gunicorn" ] || { echo "venv missing" >>"$LOG"; return 1; }
+  mkdir -p "${TRIM_PKGVAR}/logs"
+  if [ -f "${TRIM_PKGVAR}/init.env" ]; then set -a; . "${TRIM_PKGVAR}/init.env"; set +a; fi
+  rm -f "$SOCK"
+  cd "$APP_DIR" || return 1
+  DATA_DIR="${TRIM_PKGVAR}/data" PATH="${VENV}/bin:${PATH}" \
+    nohup "${VENV}/bin/gunicorn" --workers 1 --threads 4 --timeout 120 \
+      --bind "unix:${SOCK}" --pid "${PID_FILE}" wsgi:application >>"$LOG" 2>&1 &
+  sleep 1
+  status_app
+}
+
+status_app() {
+  [ -f "$PID_FILE" ] || return 1
+  local pid
+  pid="$(head -n1 "$PID_FILE" | tr -d '[:space:]')"
+  [ -n "$pid" ] || return 1
+  kill -0 "$pid" 2>/dev/null || return 1
+  [ -S "$SOCK" ]
+}
+
+stop_app() {
+  if [ -f "$PID_FILE" ]; then
+    local pid
+    pid="$(head -n1 "$PID_FILE" | tr -d '[:space:]')"
+    [ -n "$pid" ] && kill -TERM "$pid" 2>/dev/null || true
+    for _ in 1 2 3 4 5 6 7 8 9 10; do kill -0 "$pid" 2>/dev/null || break; sleep 1; done
+    kill -KILL "$pid" 2>/dev/null || true
+    rm -f "$PID_FILE"
+  fi
+  rm -f "$SOCK"
+}
+
+case "${1:-}" in
+  start) start_app ;;
+  stop) stop_app ;;
+  status) status_app ;;
+  *) echo "unknown" >&2; exit 1 ;;
+esac

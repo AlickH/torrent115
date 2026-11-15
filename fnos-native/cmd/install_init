@@ -1,0 +1,4 @@
+#!/bin/bash
+set -euo pipefail
+mkdir -p "${TRIM_PKGVAR}/data" "${TRIM_PKGVAR}/logs"
+exit 0

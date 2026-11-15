@@ -1,0 +1,23 @@
+[
+  {
+    "stepTitle": "Torrent115 初始化",
+    "items": [
+      {
+        "type": "text",
+        "field": "t115_admin_user",
+        "label": "管理员账号",
+        "initValue": "admin",
+        "rules": [{ "required": true, "message": "请输入管理员账号" }]
+      },
+      {
+        "type": "password",
+        "field": "t115_admin_password",
+        "label": "管理员密码（至少 6 位）",
+        "rules": [
+          { "required": true, "message": "请设置管理员密码" },
+          { "pattern": "^.{6,}$", "message": "密码至少 6 位" }
+        ]
+      }
+    ]
+  }
+]

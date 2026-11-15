@@ -1,0 +1,16 @@
+#!/bin/bash
+set -euo pipefail
+export PATH="/var/apps/python312/target/bin:${PATH}"
+APP_DIR="${TRIM_APPDEST}/server"
+VENV="${TRIM_PKGVAR}/venv"
+mkdir -p "${TRIM_PKGVAR}/data" "${TRIM_PKGVAR}/logs"
+cat > "${TRIM_PKGVAR}/init.env" <<ENV
+T115_ADMIN_USER=${t115_admin_user:-admin}
+T115_ADMIN_PASSWORD=${t115_admin_password:-}
+ENV
+chmod 600 "${TRIM_PKGVAR}/init.env"
+if [ ! -x "${VENV}/bin/python" ]; then
+  python3 -m venv --copies "${VENV}"
+fi
+"${VENV}/bin/pip" install --no-index --find-links "${APP_DIR}/wheelhouse" -r "${APP_DIR}/requirements-native.txt"
+exit 0
