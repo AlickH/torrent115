@@ -66,7 +66,7 @@ def _map(t):
         "total": int(t.get("size") or 0),
         "done": int(t.get("completed") or 0),
         "seeders": int(t.get("num_seeds") or 0),
-        "peers": int(t.get("num_leechs") or 0),
+        "peers": int(t.get("num_leechs") or 0) + int(t.get("num_seeds") or 0),
         "save_path": t.get("save_path") or "",
     }
 
