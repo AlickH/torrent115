@@ -517,7 +517,7 @@ export default function App({ mode, setMode, dark }) {
     />
   );
   return (
-    <div className="page" style={{ minHeight: '100vh', background: bg }}>
+    <div className="page" style={{ height: '100vh', overflow: 'hidden', background: bg }}>
       {!isMobile ? (
         <aside style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: 200, zIndex: 30, display: 'flex', flexDirection: 'column', padding: '10px 8px', background: bg }}>
           <div style={{ flex: 1, overflow: 'auto', paddingTop: 6 }}>{navMenu}</div>
@@ -526,14 +526,14 @@ export default function App({ mode, setMode, dark }) {
       <Drawer open={navOpen} onClose={() => setNavOpen(false)} placement="left" width={250} title="Torrent115" styles={{ body: { padding: 8 } }}>
         {navMenu}
       </Drawer>
-      <div className="page-inner" style={isMobile ? { padding: 12, height: '100vh', overflow: 'auto' } : { marginLeft: 208, marginRight: 8, marginTop: 8, marginBottom: 8, height: 'calc(100vh - 16px)', overflow: 'auto', maxWidth: 'none', background: token.colorBgContainer, borderRadius: 12, padding: 20, boxShadow: '0 1px 2px rgba(0,0,0,.06)', border: `1px solid ${token.colorBorderSecondary}` }}>
+      <div className="page-inner" style={isMobile ? { height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: 0 } : { marginLeft: 208, marginRight: 8, marginTop: 8, marginBottom: 8, height: 'calc(100vh - 16px)', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxWidth: 'none', background: token.colorBgContainer, borderRadius: 12, padding: 0, boxShadow: '0 1px 2px rgba(0,0,0,.06)', border: `1px solid ${token.colorBorderSecondary}` }}>
         {track.auto?.running ? (
           <div style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 1000, background: token.colorBgContainer, border: `1px solid ${token.colorBorderSecondary}`, borderRadius: 24, padding: '8px 16px', boxShadow: '0 6px 20px rgba(0,0,0,.12)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Spin size="small" />
             <span style={{ fontSize: 13 }}>自动任务运行中…</span>
           </div>
         ) : null}
-        <div ref={topRef} className="topbar" style={{ position: 'sticky', top: 0, zIndex: 20, background: token.colorBgContainer, paddingBottom: 8 }}>
+        <div ref={topRef} className="topbar" style={{ flexShrink: 0, background: token.colorBgContainer, padding: isMobile ? '12px 12px 0' : '16px 20px 0' }}>
           <div className="pad-x" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {isMobile ? <Button type="text" icon={<MenuOutlined />} onClick={() => setNavOpen(true)} /> : null}
             <Typography.Text strong style={{ fontSize: 17 }}>磁力搜索</Typography.Text>
@@ -595,7 +595,7 @@ export default function App({ mode, setMode, dark }) {
             ) : null}
           </div>
         </div>
-        <div>
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: isMobile ? '0 12px 12px' : '0 20px 20px' }}>
           <Table
             size="middle"
             rowKey={rowKey}
@@ -603,7 +603,7 @@ export default function App({ mode, setMode, dark }) {
             dataSource={rows}
             pagination={{ current: page, pageSize, onChange: setPage, showSizeChanger: false, showTotal: t => `共 ${t} 条`, size: 'small' }}
             loading={loading && !rows.length}
-            sticky={{ offsetHeader: topH }}
+            sticky={{ offsetHeader: 0 }}
             scroll={isMobile ? undefined : { x: 860 }}
             locale={{ emptyText: <Empty description={loading ? '搜索中…' : '还没有结果，先搜索吧'} /> }}
           />
