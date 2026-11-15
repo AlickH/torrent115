@@ -20,11 +20,10 @@ start_app() {
   TDIR="${TRIM_APPDEST}/server/bin/${ARCH}"
   if [ -x "${TDIR}/transmission-daemon" ] && ! pgrep -f "transmission-daemon.*${TRIM_PKGVAR}" >/dev/null 2>&1; then
     LD_LIBRARY_PATH="${TDIR}/lib" "${TDIR}/transmission-daemon" \
-      --config-dir "${TRIM_PKGVAR}/data/transmission" \
-      --download-dir "$T115_DOWNLOAD_DIR" \
-      --rpc-bind-address 127.0.0.1 --rpc-port 9092 \
-      --rpc-username t115 --rpc-password t115pass --rpc-whitelist 127.0.0.1 \
-      --peer-port 51413 --port-forwarding-enabled --dht-enabled --lpd-enabled --utp-enabled \
+      -f -g "${TRIM_PKGVAR}/data/transmission" -w "$T115_DOWNLOAD_DIR" \
+      -p 9092 -r 127.0.0.1 -u t115 -v t115pass \
+      -P 51413 -m -o -y --utp -L 500 -l 100 -et \
+      -x "${TRIM_PKGVAR}/data/transmission/transmission.pid" \
       >>"${TRIM_PKGVAR}/logs/transmission.log" 2>&1 &
   fi
   rm -f "$SOCK"
