@@ -565,9 +565,9 @@ export default function App({ mode, setMode, dark }) {
       style={{ border: 'none', background: 'transparent' }}
       items={[
         { key: 'search', icon: <SearchOutlined />, label: '搜索' },
-        { key: 'bt', icon: <DownloadOutlined />, label: 'BT 下载' },
         { key: 'auto', icon: <CalendarOutlined />, label: '追剧自动转存' },
         { key: 'trending', icon: <FireOutlined />, label: 'TMDB 最近热映' },
+        { key: 'bt', icon: <DownloadOutlined />, label: 'BT 下载' },
         { type: 'divider' },
         { key: 'settings', icon: <SettingOutlined />, label: '设置' },
         { key: 'logout', icon: <LogoutOutlined />, label: '退出登录' },
@@ -591,7 +591,7 @@ export default function App({ mode, setMode, dark }) {
         {navMenu}
       </Drawer>
       <div className="page-inner" style={isMobile ? { height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: 0 } : { marginLeft: 208, marginRight: 8, marginTop: 0, marginBottom: 8, height: 'calc(100vh - 8px)', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxWidth: 'none', background: token.colorBgContainer, borderRadius: 14, padding: 0, boxShadow: '0 1px 2px rgba(0,0,0,.06)' }}>
-        {track.auto?.running ? (
+        {track.auto?.running && (view === 'search' || view === 'auto') ? (
           <div style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 1000, background: token.colorBgContainer, border: `1px solid ${token.colorBorderSecondary}`, borderRadius: 24, padding: '8px 16px', boxShadow: '0 6px 20px rgba(0,0,0,.12)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Spin size="small" />
             <span style={{ fontSize: 13 }}>自动任务运行中…</span>
