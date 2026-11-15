@@ -32,8 +32,6 @@ def _get_session():
                 "announce_to_all_trackers": True,
                 "announce_to_all_tiers": True,
                 "prefer_udp_trackers": True,
-                "in_encryption": "1",
-                "out_encryption": "1",
                 "allow_multiple_connections_per_ip": True,
                 "aio_threads": 8,
                 "hashing_threads": 2,
