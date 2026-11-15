@@ -1,0 +1,12 @@
+services:
+  torrent115:
+    image: torrent115:__T115_TAG__
+    container_name: torrent115
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - "${TRIM_PKGVAR}/data:/data"
+      # 可选：启用本地下载器时取消注释（需要 fnOS 下载中心已启用）
+      # - /usr/trim/var/downloadcenter/1000/qbt.sock:/run/qbt.sock
+    environment:
+      - TZ=Asia/Shanghai

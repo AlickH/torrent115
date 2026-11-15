@@ -119,3 +119,28 @@ bitmagnet 来源默认通过 PostgreSQL 直连查询：
 - 本项目仅供个人 NAS 使用，请遵守当地法律法规和网盘服务条款；
 - 115 Cookie、API Key 等敏感信息只保存在本机 `data/`，请勿提交或分享；
 - 使用 host 网络是为了访问 115、tracker、本地服务；如需端口映射可自行调整。
+
+## fnOS FPK 应用
+
+仓库内置 `fnos/` 打包工程，可生成带离线镜像的 `.fpk`，在飞牛应用中心手动安装。
+
+在 fnOS NAS 上构建（需要本机已有 `torrent115:latest` 镜像、`fnpack`）：
+
+```bash
+bash fnos/build.sh 0.1.0
+# 产物：artifacts/release/Torrent115-0.1.0.fpk
+```
+
+安装：
+
+```bash
+appcenter-cli install-fpk artifacts/release/Torrent115-0.1.0.fpk
+```
+
+或在「应用中心 → 手动安装」选择生成的 fpk。
+
+说明：
+
+- 应用数据保存在 fnOS 应用数据目录（`${TRIM_PKGVAR}/data`），首次安装后需要在设置里重新填写 115 Cookie / TMDB Key 等；
+- 默认使用 host 网络；
+- 「本地下载器」需要手动在 `fnos/app/docker/docker-compose.yaml` 取消 qbt socket 挂载注释并重新打包。

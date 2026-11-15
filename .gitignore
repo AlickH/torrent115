@@ -5,3 +5,7 @@ __pycache__/
 data/
 web/node_modules/
 web/dist/
+artifacts/
+fnos/app/docker/*.tar.gz
+fnos/cmd/offline-image.env
+fnos/app/docker/offline-image.env

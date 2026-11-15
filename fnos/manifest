@@ -1,0 +1,16 @@
+appname=torrent115
+version=__T115_VERSION__
+display_name=Torrent115
+desc=磁力搜索 → 115 云下载 → 追剧自动转存的轻量 Web 应用。支持多源搜索、115 云下载、Trakt/TMDB 追剧日历与本地下载器联动。
+source=thirdparty
+platform=x86
+maintainer=AlickH
+maintainer_url=https://github.com/AlickH
+distributor=AlickH
+distributor_url=https://github.com/AlickH
+os_min_version=0.8.6
+desktop_uidir=ui
+desktop_applaunchname=torrent115.main
+service_port=8099
+checkport=false
+ctl_stop=true

@@ -1,0 +1,6 @@
+#!/bin/bash
+# 安装/升级完成后清理安装目录中的镜像归档，节省空间。
+set -u
+rm -f "${TRIM_APPDEST}/docker/torrent115-image.tar.gz" 2>/dev/null || true
+rm -f "${TRIM_APPDEST}/docker/offline-image.env" 2>/dev/null || true
+exit 0

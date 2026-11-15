@@ -1,0 +1,73 @@
+#!/bin/bash
+# 离线 FPK 安装/升级前导入随包镜像；在线包没有元数据时直接跳过。
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+METADATA_FILE="$SCRIPT_DIR/offline-image.env"
+ARCHIVE_MEMBER="docker/torrent115-image.tar.gz"
+LOG_FILE="${TRIM_TEMP_LOGFILE:-/dev/stderr}"
+
+write_log() {
+  if ! printf '%s\n' "$1" >> "$LOG_FILE" 2>/dev/null; then
+    printf '%s\n' "$1" >&2
+  fi
+}
+
+fail() {
+  write_log "Torrent115 离线镜像导入失败：$1"
+  exit 1
+}
+
+metadata_value() {
+  local key="$1" value
+  value="$(sed -n "s/^${key}=//p" "$METADATA_FILE")"
+  [ -n "$value" ] || fail "镜像元数据缺少 $key"
+  printf '%s\n' "$value"
+}
+
+find_app_archive() {
+  local candidate
+  for candidate in \
+    "${TRIM_TEMP_TPKFILE:-}" \
+    "${TRIM_PKGINST_TEMP_DIR:-}" \
+    "$(cd "$SCRIPT_DIR/.." && pwd)"; do
+    [ -n "$candidate" ] || continue
+    if [ -f "$candidate/app.tgz" ]; then
+      printf '%s\n' "$candidate/app.tgz"
+      return 0
+    fi
+    if [ -f "$candidate" ] && [ "$(basename "$candidate")" = "app.tgz" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+[ -f "$METADATA_FILE" ] || exit 0
+
+IMAGE_TAG="$(metadata_value IMAGE_TAG)"
+IMAGE_ARCH="$(metadata_value IMAGE_ARCH)"
+IMAGE_ID="$(metadata_value IMAGE_ID)"
+
+command -v docker >/dev/null 2>&1 || fail "设备未安装 Docker"
+SYSTEM_ARCH="${TRIM_SYS_ARCH:-$(uname -m)}"
+case "$IMAGE_ARCH:$SYSTEM_ARCH" in
+  amd64:x86_64|arm64:aarch64) ;;
+  *) fail "安装包架构 $IMAGE_ARCH 与设备架构 $SYSTEM_ARCH 不匹配" ;;
+esac
+
+CURRENT_ID="$(docker image inspect --format '{{.Id}}' "$IMAGE_TAG" 2>/dev/null || true)"
+if [ "$CURRENT_ID" = "$IMAGE_ID" ]; then
+  printf 'Torrent115 离线镜像已存在，跳过重复导入：%s\n' "$IMAGE_TAG"
+  exit 0
+fi
+
+APP_ARCHIVE="$(find_app_archive)" || fail "找不到安装包中的 app.tgz"
+tar -tzf "$APP_ARCHIVE" "$ARCHIVE_MEMBER" >/dev/null 2>&1 || fail "app.tgz 缺少离线镜像归档"
+
+TEMP_ARCHIVE="$(mktemp "${TMPDIR:-/tmp}/torrent115-image.XXXXXX.tar.gz")" || fail "无法创建临时文件"
+trap 'rm -f "$TEMP_ARCHIVE"' EXIT
+tar -xOzf "$APP_ARCHIVE" "$ARCHIVE_MEMBER" > "$TEMP_ARCHIVE"
+docker load -i "$TEMP_ARCHIVE" >/dev/null || fail "docker load 失败"
+printf 'Torrent115 离线镜像导入完成：%s\n' "$IMAGE_TAG"
