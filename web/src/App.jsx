@@ -11,10 +11,10 @@ const TrendingModal = lazy(() => import('./components/TrendingModal.jsx'));
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert, App as AntApp, AutoComplete, Button, Checkbox, Collapse, Col, Divider, Dropdown, Empty, Flex, Form, Image, Input, theme,
-  InputNumber, Modal, Popover, Row, Select, Space, Spin, Switch, Table, Tabs, Tag, Tooltip, Typography,
+  Drawer, InputNumber, Menu, Modal, Popover, Row, Select, Space, Spin, Switch, Table, Tabs, Tag, Tooltip, Typography,
 } from 'antd';
 import {
-  CalendarOutlined, CheckCircleOutlined, DesktopOutlined, EyeOutlined, FileTextOutlined, LogoutOutlined, MoonOutlined, PlusOutlined, QrcodeOutlined, SyncOutlined,
+  CalendarOutlined, CheckCircleOutlined, DesktopOutlined, EyeOutlined, FileTextOutlined, LogoutOutlined, MenuOutlined, MoonOutlined, PlusOutlined, QrcodeOutlined, SearchOutlined, SyncOutlined,
   SettingOutlined, SlidersOutlined, SunOutlined, FireOutlined,
 } from '@ant-design/icons';
 
@@ -86,6 +86,7 @@ export default function App({ mode, setMode, dark }) {
   const [activeTab, setActiveTab] = useState('all');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [trendingOpen, setTrendingOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [srcOpen, setSrcOpen] = useState(false);
   const [tabOverflow, setTabOverflow] = useState(false);
@@ -488,9 +489,52 @@ export default function App({ mode, setMode, dark }) {
   };
 
   const bg = token.colorBgLayout;
+  const navMenu = (
+    <Menu
+      className="app-sidebar-menu"
+      mode="inline"
+      selectable={false}
+      style={{ border: 'none', background: 'transparent' }}
+      items={[
+        { key: 'search', icon: <SearchOutlined />, label: '搜索' },
+        { key: 'auto', icon: <CalendarOutlined />, label: '追剧自动转存' },
+        { key: 'trending', icon: <FireOutlined />, label: 'TMDB 最近热映' },
+        { key: 'sources', icon: <SlidersOutlined />, label: '搜索源与选项' },
+        { type: 'divider' },
+        { key: 'settings', icon: <SettingOutlined />, label: '设置' },
+        { key: 'theme', icon: themeIcon, label: themeTip },
+        { key: 'logout', icon: <LogoutOutlined />, label: '退出登录' },
+      ]}
+      onClick={({ key }) => {
+        setNavOpen(false);
+        if (key === 'auto') track.openAuto();
+        else if (key === 'trending') setTrendingOpen(true);
+        else if (key === 'sources') setSrcOpen(true);
+        else if (key === 'settings') openSettings();
+        else if (key === 'theme') cycleTheme();
+        else if (key === 'logout') window.location.href = '/logout';
+      }}
+    />
+  );
+  const brandMark = (
+    <Flex align="center" gap={8} style={{ padding: '6px 10px 14px' }}>
+      <svg viewBox="0 0 32 32" aria-hidden="true" style={{ width: 22, height: 22 }}><rect width="32" height="32" rx="8" fill={token.colorPrimary}/><path d="M9 7v10a7 7 0 0 0 14 0V7" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round"/><path d="M9 7h4v6H9zM19 7h4v6h-4z" fill="#fff"/></svg>
+      <Typography.Text strong style={{ fontSize: 15 }}>Torrent115</Typography.Text>
+    </Flex>
+  );
   return (
     <div className="page" style={{ minHeight: '100vh', background: bg }}>
-      <div className="page-inner">
+      {!isMobile ? (
+        <aside style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: 208, zIndex: 30, display: 'flex', flexDirection: 'column', padding: '12px 8px', background: token.colorBgContainer, borderRight: `1px solid ${token.colorBorderSecondary}` }}>
+          {brandMark}
+          <div style={{ flex: 1, overflow: 'auto' }}>{navMenu}</div>
+          <Typography.Text type="secondary" style={{ fontSize: 11, padding: 8 }}>磁力搜索 → 115 云下载</Typography.Text>
+        </aside>
+      ) : null}
+      <Drawer open={navOpen} onClose={() => setNavOpen(false)} placement="left" width={250} title="Torrent115" styles={{ body: { padding: 8 } }}>
+        {navMenu}
+      </Drawer>
+      <div className="page-inner" style={{ paddingLeft: isMobile ? undefined : 224 }}>
         {track.auto?.running ? (
           <div style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 1000, background: token.colorBgContainer, border: `1px solid ${token.colorBorderSecondary}`, borderRadius: 24, padding: '8px 16px', boxShadow: '0 6px 20px rgba(0,0,0,.12)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Spin size="small" />
@@ -498,27 +542,9 @@ export default function App({ mode, setMode, dark }) {
           </div>
         ) : null}
         <div ref={topRef} className="topbar" style={{ position: 'sticky', top: 0, zIndex: 20, background: bg }}>
-          <div className="pad-x">
-          <Flex justify="space-between" align="center" wrap="wrap" gap={8}>
-            <span className="brand">
-              <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill={token.colorPrimary}/><path d="M9 7v10a7 7 0 0 0 14 0V7" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round"/><path d="M9 7h4v6H9zM19 7h4v6h-4z" fill="#fff"/></svg>
-              <Typography.Text strong style={{ fontSize: 15 }}>磁力搜索 → 115 云下载</Typography.Text>
-            </span>
-            <Space size={4}>
-              <Tooltip title="追剧自动转存"><Button type="text" icon={<CalendarOutlined />} onClick={track.openAuto} /></Tooltip>
-              <Tooltip title="TMDB 最近热映"><Button type="text" icon={<FireOutlined />} onClick={() => setTrendingOpen(true)} /></Tooltip>
-              {isMobile ? (
-                <Button type="text" icon={<SlidersOutlined />} title="搜索源与选项" onClick={() => setSrcOpen(true)} />
-              ) : (
-                <Popover content={sourcePanel} trigger="click" placement="bottomRight">
-                  <Button type="text" icon={<SlidersOutlined />} title="搜索源与选项" />
-                </Popover>
-              )}
-              <Tooltip title={themeTip}><Button type="text" icon={themeIcon} onClick={cycleTheme} /></Tooltip>
-              <Tooltip title="设置"><Button type="text" icon={<SettingOutlined />} onClick={openSettings} /></Tooltip>
-              <Tooltip title="退出登录"><Button type="text" icon={<LogoutOutlined />} onClick={() => (window.location.href = '/logout')} /></Tooltip>
-            </Space>
-          </Flex>
+          <div className="pad-x" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {isMobile ? <Button type="text" icon={<MenuOutlined />} onClick={() => setNavOpen(true)} /> : null}
+            <Typography.Text strong style={{ fontSize: 15 }}>磁力搜索 → 115 云下载</Typography.Text>
           </div>
           {cfg?.is_default_auth ? (
             <div style={{ marginTop: 8, padding: '6px 12px', background: token.colorWarningBg, borderRadius: token.borderRadius }}>
