@@ -11,7 +11,15 @@ export function hostApp() {
 }
 
 function findPath(value) {
-  if (typeof value === 'string') return value.startsWith('/') ? value : null;
+  if (typeof value === 'string') {
+    if (value.startsWith('/')) return value;
+    const trimmed = value.trim();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try { return findPath(JSON.parse(trimmed)); } catch { /* ignore */ }
+    }
+    const m = trimmed.match(/\/[^\s"'\]]+/);
+    return m ? m[0] : null;
+  }
   if (Array.isArray(value)) {
     for (const item of value) {
       const p = findPath(item);
@@ -49,8 +57,8 @@ export async function pickFolder(title) {
       const r = await run();
       const path = findPath(r);
       if (path) return { path };
-      // 打开过选择器但用户取消：直接结束，不继续弹下一个
-      return { path: null };
+      if (r === undefined || r === null) return { path: null };
+      return { error: '无法解析选择结果：' + JSON.stringify(r).slice(0, 160) };
     } catch (e) {
       lastError = e;
     }
