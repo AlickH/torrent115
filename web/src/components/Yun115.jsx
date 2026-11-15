@@ -12,6 +12,7 @@ function size(n) {
 }
 function when(ts) {
   if (!ts) return '-';
+  if (typeof ts === 'string') return ts;
   return new Date(ts * 1000).toLocaleString();
 }
 

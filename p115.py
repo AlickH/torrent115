@@ -204,10 +204,10 @@ def p115_list_files(cfg, cid="0"):
     for x in items:
         if x.get("cid") is not None:
             out.append({"id": str(x.get("cid")), "name": x.get("n") or "", "is_dir": True,
-                        "size": 0, "mtime": int(x.get("t") or 0)})
+                        "size": 0, "mtime": x.get("t") or ""})
         else:
             out.append({"id": str(x.get("fid") or ""), "name": x.get("n") or "", "is_dir": False,
-                        "size": int(x.get("s") or 0), "mtime": int(x.get("t") or 0)})
+                        "size": int(x.get("s") or 0), "mtime": x.get("t") or ""})
     out.sort(key=lambda x: (not x["is_dir"], x["name"].lower()))
     return out
 
