@@ -56,3 +56,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Ping
 
 /* 侧边栏选中态：原生风格的灰色底 */
 .app-sidebar-menu .ant-menu-item-selected { background: rgba(127,127,127,.16) !important; }
+
+/* 标题/链接单行省略，避免撑出横向滚动 */
+.title-cell { min-width: 0; }
+.title-cell .mono { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ant-table-wrapper .ant-table-cell { overflow: hidden; }
