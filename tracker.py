@@ -439,12 +439,18 @@ AUDIO_ONLY_CN = ("原声", "原聲", "无损", "無損", "专辑", "專輯")
 CAM_RE = re.compile(
     r"(?<![a-z0-9])(cam|camrip|hdcam|hqcam|hdts|hdtc|telesync|telecine|tsrip)(?![a-z0-9])"
 )
+CAM_UPPER_RE = re.compile(r"(?<![A-Za-z0-9])(TS|TC)(?![A-Za-z0-9])")
 CAM_CN = ("枪版", "槍版", "抢先版", "搶先版", "录屏", "錄屏")
 
 
 def is_cam_release(title):
-    low = (title or "").lower()
-    return bool(CAM_RE.search(low)) or any(w in low for w in CAM_CN)
+    raw = title or ""
+    if CAM_RE.search(raw.lower()):
+        return True
+    for m in CAM_UPPER_RE.finditer(raw):
+        if raw[m.end():].strip(" ._-[]()"):
+            return True
+    return any(w in raw for w in CAM_CN)
 
 
 def is_video_release(title):
