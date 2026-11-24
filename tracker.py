@@ -430,6 +430,19 @@ def _size_gb(it):
 
 STOP_WORDS = {"the", "and", "for", "with", "of", "a", "an", "to", "in", "on", "part", "season"}
 
+AUDIO_ONLY_RE = re.compile(
+    r"(?<![a-z0-9])(flac|alac|dsf|dff|m4a|mp3|ost|soundtrack|soundtracks|"
+    r"lossless|hires|hi-res|vinyl|vinylrip|album|320kbps|320k|vbr|v0)(?![a-z0-9])"
+)
+AUDIO_ONLY_CN = ("原声", "原聲", "无损", "無損", "专辑", "專輯")
+
+
+def is_video_release(title):
+    low = (title or "").lower()
+    if AUDIO_ONLY_RE.search(low):
+        return False
+    return not any(w in low for w in AUDIO_ONLY_CN)
+
 
 def strict_match(item, episode):
     title = (item.get("title") or "").lower()
@@ -472,6 +485,8 @@ def rank_candidates(cfg, items, episode=None):
     out = []
     strict = bool(cfg.get("auto_strict_match"))
     for it in items:
+        if not is_video_release(it.get("title")):
+            continue
         if strict and episode and it.get("kind") != "115" and not strict_match(it, episode):
             continue
         if it.get("kind") == "115":
