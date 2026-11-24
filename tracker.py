@@ -436,6 +436,16 @@ AUDIO_ONLY_RE = re.compile(
 )
 AUDIO_ONLY_CN = ("原声", "原聲", "无损", "無損", "专辑", "專輯")
 
+CAM_RE = re.compile(
+    r"(?<![a-z0-9])(cam|camrip|hdcam|hqcam|hdts|hdtc|telesync|telecine|tsrip)(?![a-z0-9])"
+)
+CAM_CN = ("枪版", "槍版", "抢先版", "搶先版", "录屏", "錄屏")
+
+
+def is_cam_release(title):
+    low = (title or "").lower()
+    return bool(CAM_RE.search(low)) or any(w in low for w in CAM_CN)
+
 
 def is_video_release(title):
     low = (title or "").lower()
@@ -484,8 +494,11 @@ def rank_candidates(cfg, items, episode=None):
     max_gb = float(cfg.get("auto_max_size_gb") or 0)
     out = []
     strict = bool(cfg.get("auto_strict_match"))
+    exclude_cam = bool(cfg.get("auto_exclude_cam", True)) and (episode or {}).get("media_type") == "movie"
     for it in items:
         if not is_video_release(it.get("title")):
+            continue
+        if exclude_cam and is_cam_release(it.get("title")):
             continue
         if strict and episode and it.get("kind") != "115" and not strict_match(it, episode):
             continue
@@ -619,7 +632,8 @@ def _eff_cfg(cfg, show, presets, keypair):
                      ("codec", "auto_codec"), ("strict_match", "auto_strict_match"),
                      ("rank_order", "auto_rank_order"), ("seed_tiers", "auto_seed_tiers"),
                      ("size_big", "auto_size_big"), ("source_order", "auto_source_order"),
-                     ("wait_timeout", "auto_wait_timeout"), ("use_local", "auto_use_local")):
+                     ("wait_timeout", "auto_wait_timeout"), ("use_local", "auto_use_local"),
+                     ("exclude_cam", "auto_exclude_cam")):
         v = preset.get(src)
         if v not in (None, "", []):
             eff[dst] = v

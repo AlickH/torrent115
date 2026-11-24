@@ -70,6 +70,7 @@ DEFAULT_CONFIG = {
     "auto_size_big": True,
     "auto_max_size_gb": 0,
     "auto_min_seeders": 1,
+    "auto_exclude_cam": True,
     "auto_codec": "",
     "auto_dry_run": True,
     "ai_enabled": False,

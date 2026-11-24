@@ -339,6 +339,13 @@ export default function TrackingModals(p) {
                     <Col span={12}><Form.Item label="最大体积（GB，0=不限）"><InputNumber min={0} value={presetDraft.max_size_gb} onChange={v => setPresetDraft({ ...presetDraft, max_size_gb: v || 0 })} style={{ width: '100%' }} /></Form.Item></Col>
                     <Col span={12}><Form.Item label="编码偏好"><Select allowClear value={presetDraft.codec || undefined} onChange={v => setPresetDraft({ ...presetDraft, codec: v || '' })} options={['x265', 'HEVC', 'x264', 'H264'].map(v => ({ value: v, label: v }))} placeholder="不限" style={{ width: '100%' }} /></Form.Item></Col>
                     <Col span={12}><Form.Item label="严格匹配"><Select allowClear value={presetDraft.strict_match} onChange={v => setPresetDraft({ ...presetDraft, strict_match: v })} options={[{ value: true, label: '开启' }, { value: false, label: '关闭' }]} placeholder="默认" style={{ width: '100%' }} /></Form.Item></Col>
+                    {presetDraft.media_type === 'movie' ? (
+                      <Col span={12}>
+                        <Form.Item label="排除 CAM（枪版 / 抢先版）" tooltip="CAM、CAMRip、HDCAM、HDTS、TELESYNC 等低画质版本">
+                          <Switch checked={presetDraft.exclude_cam !== false} onChange={v => setPresetDraft({ ...presetDraft, exclude_cam: v })} />
+                        </Form.Item>
+                      </Col>
+                    ) : null}
                     <Col span={12}><Form.Item label="启用 AI 选种"><Switch checked={!!presetDraft.ai_enabled} onChange={v => setPresetDraft({ ...presetDraft, ai_enabled: v })} /></Form.Item></Col>
                     <Col span={12}><Form.Item label="AI 预设"><Select allowClear value={presetDraft.ai_preset_id || undefined} onChange={v => setPresetDraft({ ...presetDraft, ai_preset_id: v || '' })} options={aiPresets.map(a => ({ value: a.id, label: a.name + ' · ' + (a.model || '') }))} placeholder="选择 AI 预设" style={{ width: '100%' }} /></Form.Item></Col>
                     <Col span={24}><Form.Item label="清晰度优先级"><Select mode="tags" value={presetDraft.res_order || []} onChange={v => setPresetDraft({ ...presetDraft, res_order: v })} options={['2160p', '1080p', '720p', '480p'].map(v => ({ value: v, label: v }))} /></Form.Item></Col>
