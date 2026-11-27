@@ -207,7 +207,7 @@ def p115_list_files(cfg, cid="0"):
             t = int(t)
         except Exception:
             pass
-        if x.get("cid") is not None:
+        if x.get("fid") is None and x.get("cid") is not None:
             out.append({"id": str(x.get("cid")), "name": x.get("n") or "", "is_dir": True,
                         "size": 0, "mtime": t})
         else:

@@ -252,7 +252,8 @@ def ensure(cfg, video, meta=None, workdir="."):
     track = _pick_source_track(tracks)
     if not track:
         return {"action": "no-track", "detail": "没有可翻译的文本字幕轨"}
-    if not cfg.get("ai_enabled") or not (cfg.get("ai_api_key") or "").strip():
+    ai = ai_cfg(cfg)
+    if not (ai.get("ai_api_key") or "").strip():
         return {"action": "no-track", "detail": "需要翻译但没有配置 AI 模型"}
 
     tmp_srt = os.path.join(workdir, "src.srt")
@@ -262,7 +263,7 @@ def ensure(cfg, video, meta=None, workdir="."):
     os.remove(tmp_srt)
     if not cues:
         return {"action": "no-track", "detail": "字幕轨为空"}
-    translated = translate(cfg, cues, meta)
+    translated = translate(ai, cues, meta)
     target = os.path.splitext(video)[0] + ".zh.srt"
     with open(target, "w", encoding="utf-8") as fh:
         fh.write(_render_srt(translated))
@@ -328,7 +329,8 @@ def ensure_remote(cfg, pickcode, meta=None, upload_cid=None, ua="Mozilla/5.0", w
     track = _pick_source_track(tracks)
     if not track:
         return {"action": "no-track", "detail": "没有可翻译的文本字幕轨"}
-    if not cfg.get("ai_enabled") or not (cfg.get("ai_api_key") or "").strip():
+    ai = ai_cfg(cfg)
+    if not (ai.get("ai_api_key") or "").strip():
         return {"action": "no-track", "detail": "需要翻译但没有配置 AI 模型"}
 
     src = os.path.join(workdir, "src.srt")
@@ -347,12 +349,24 @@ def ensure_remote(cfg, pickcode, meta=None, upload_cid=None, ua="Mozilla/5.0", w
     os.remove(src)
     if not cues:
         return {"action": "no-track", "detail": "字幕轨为空"}
-    translated = translate(cfg, cues, meta)
+    translated = translate(ai, cues, meta)
     target = os.path.join(workdir, title + ".zh.srt")
     with open(target, "w", encoding="utf-8") as fh:
         fh.write(_render_srt(translated))
     uploaded = _upload(cfg, target, upload_cid)
     return {"action": "translated", "detail": f"已翻译 {len(cues)} 条{uploaded}"}
+
+
+def ai_cfg(cfg):
+    """字幕翻译用的模型：全局配置优先，否则用第一个已配 Key 的 AI 预设。"""
+    if cfg.get("ai_enabled") and (cfg.get("ai_api_key") or "").strip():
+        return cfg
+    for p in cfg.get("ai_presets") or []:
+        if (p.get("api_key") or "").strip():
+            return {**cfg, "ai_enabled": True, "ai_api_key": p["api_key"],
+                    "ai_base_url": p.get("base_url") or cfg.get("ai_base_url"),
+                    "ai_model": p.get("model") or cfg.get("ai_model")}
+    return cfg
 
 
 def _upload(cfg, path, cid):
