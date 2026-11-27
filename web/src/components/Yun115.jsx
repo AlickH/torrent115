@@ -22,6 +22,9 @@ export default function Yun115() {
   const [stack, setStack] = useState([{ cid: '0', name: '根目录' }]);
   const [tasks, setTasks] = useState([]);
   const [uploads, setUploads] = useState([]);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameItems, setRenameItems] = useState([]);
+  const [renaming, setRenaming] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const loadFiles = async cid => {
@@ -79,6 +82,35 @@ export default function Yun115() {
     } catch (e) { hide(); message.error(e.message || '处理失败'); }
   };
 
+  const planRename = async () => {
+    setRenaming(true);
+    try {
+      const r = await api('/api/rename/cloud/plan', { method: 'POST', body: { cid: stack[stack.length - 1].cid } });
+      if (!r.ok) message.error(r.error || '读取失败');
+      else { setRenameItems(r.items || []); setRenameOpen(true); }
+    } catch (e) { message.error(e.message || '读取失败'); }
+    setRenaming(false);
+  };
+
+  const applyRename = async () => {
+    setRenaming(true);
+    try {
+      const r = await api('/api/rename/cloud/apply', { method: 'POST', body: {
+        cid: stack[stack.length - 1].cid, items: renameItems,
+      } });
+      if (!r.ok) message.error(r.error || '失败');
+      else {
+        const ok = (r.results || []).filter(x => x.ok).length;
+        const bad = (r.results || []).filter(x => !x.ok);
+        message.success(`已整理 ${ok} 个文件`);
+        bad.forEach(b => message.error(`${b.src}: ${b.error}`));
+        setRenameOpen(false);
+        loadFiles(stack[stack.length - 1].cid);
+      }
+    } catch (e) { message.error(e.message || '失败'); }
+    setRenaming(false);
+  };
+
   const fileCols = [
     { title: '名称', render: (_, r) => (
       <Space>
@@ -132,7 +164,10 @@ export default function Yun115() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '16px 20px' }}>
       <Tabs activeKey={tab} onChange={setTab}
         items={[{ key: 'files', label: '文件列表' }, { key: 'offline', label: '离线下载' }, { key: 'uploads', label: '本地上传' }]}
-        tabBarExtraContent={<Button icon={<ReloadOutlined />} onClick={() => tab === 'files' ? loadFiles(stack[stack.length - 1].cid) : tab === 'offline' ? loadOffline() : loadUploads()}>刷新</Button>} />
+        tabBarExtraContent={<Space>
+          {tab === 'files' ? <Button onClick={planRename} loading={renaming}>整理命名</Button> : null}
+          <Button icon={<ReloadOutlined />} onClick={() => tab === 'files' ? loadFiles(stack[stack.length - 1].cid) : tab === 'offline' ? loadOffline() : loadUploads()}>刷新</Button>
+        </Space>} />
       {tab === 'files' ? (
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <Breadcrumb style={{ marginBottom: 10 }} items={stack.map((s, i) => ({
@@ -154,6 +189,15 @@ export default function Yun115() {
             locale={{ emptyText: <Empty description="还没有本地上传记录" /> }} />
         </div>
       )}
+      <Modal open={renameOpen} onCancel={() => setRenameOpen(false)} title="整理命名（115 云端）" width={920}
+        okText="应用" confirmLoading={renaming} onOk={applyRename}>
+        <Table rowKey={r => r.fid} size="small" pagination={false} dataSource={renameItems}
+          columns={[
+            { title: '原文件', dataIndex: 'src', ellipsis: true },
+            { title: '目标', dataIndex: 'dst', ellipsis: true },
+            { title: '识别', width: 110, render: (_, r) => r.kind === 'tv' ? (r.season ? `${r.season} E${r.episode}` : `E${r.episode}`) : (r.year || '-') },
+          ]} />
+      </Modal>
     </div>
   );
 }

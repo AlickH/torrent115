@@ -935,3 +935,31 @@ def api_rename_apply():
         safe.append(it)
     return jsonify({"ok": True, "results": rename.apply(safe)})
 
+@bp.route("/api/rename/cloud/plan", methods=["POST"])
+def api_rename_cloud_plan():
+    import rename
+    body = request.get_json(force=True, silent=True) or {}
+    cid = (body.get("cid") or "").strip()
+    if not cid:
+        return jsonify({"ok": False, "error": "缺少目录 cid"})
+    try:
+        items = rename.plan_cloud(load_config(), cid)
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)[:200]})
+    return jsonify({"ok": True, "items": items})
+
+
+@bp.route("/api/rename/cloud/apply", methods=["POST"])
+def api_rename_cloud_apply():
+    import rename
+    body = request.get_json(force=True, silent=True) or {}
+    cid = (body.get("cid") or "").strip()
+    items = body.get("items") or []
+    if not cid or not items:
+        return jsonify({"ok": False, "error": "缺少参数"})
+    try:
+        results = rename.apply_cloud(load_config(), cid, items)
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)[:200]})
+    return jsonify({"ok": True, "results": results})
+

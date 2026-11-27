@@ -115,3 +115,52 @@ def apply(items):
         except Exception as e:
             results.append({"src": src, "dst": dst, "ok": False, "error": str(e)[:160]})
     return results
+
+def plan_cloud(cfg, cid):
+    """115 目录里的视频 → 刮削结构（不落盘、不调改名）。"""
+    import p115
+    items = []
+    for x in p115.p115_children(cfg, cid):
+        name = x.get("n") or ""
+        if x.get("fid") is None or not name.lower().endswith(VIDEO_EXT):
+            continue
+        info = parse(name)
+        folder, new_name = target(info)
+        parts = folder.split("/")
+        items.append({"fid": str(x["fid"]), "src": name, "folder": parts[0],
+                      "season": parts[1] if len(parts) > 1 else None,
+                      "dst": f"{folder}/{new_name}", "kind": info["kind"],
+                      "title": info["title"], "year": info.get("year"),
+                      "episode": info.get("episode"),
+                      "action": "same" if new_name == name else "rename"})
+    return items
+
+
+def apply_cloud(cfg, cid, items):
+    """按计划在 115 上建目录、改名、移动。"""
+    import p115
+    results = []
+    folders = {}
+    for it in items:
+        if it.get("action") == "same":
+            continue
+        try:
+            folder = it["folder"]
+            if folder not in folders:
+                folders[folder] = p115.p115_mkdir(cfg, cid, folder)
+            target_cid = folders[folder]
+            season = it.get("season")
+            if season:
+                key = f"{folder}/{season}"
+                if key not in folders:
+                    folders[key] = p115.p115_mkdir(cfg, target_cid, season)
+                target_cid = folders[key]
+            name = it["dst"].rsplit("/", 1)[-1]
+            if name != it["src"]:
+                p115.p115_rename(cfg, it["fid"], name)
+            p115.p115_move(cfg, it["fid"], target_cid)
+            results.append({"fid": it["fid"], "src": it["src"], "dst": it["dst"], "ok": True})
+        except Exception as e:
+            results.append({"fid": it.get("fid"), "src": it.get("src"), "ok": False, "error": str(e)[:160]})
+    return results
+

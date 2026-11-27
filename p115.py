@@ -5,6 +5,8 @@ import urllib.parse
 
 import requests
 
+import net
+
 from net import UA, http_request
 
 VIDEO_EXT = {"mkv", "mp4", "ts", "m2ts", "iso", "avi", "mov", "wmv", "flv", "m4v", "rmvb",
@@ -17,7 +19,7 @@ def p115_headers(cfg):
             "Referer": "https://115.com/", "Origin": "https://115.com"}
 
 def p115_downpath(cfg):
-    r = requests.get("https://webapi.115.com/offine/downpath", headers=p115_headers(cfg), timeout=25)
+    r = net.http_request(cfg, "GET", "https://webapi.115.com/offine/downpath", headers=p115_headers(cfg), timeout=25)
     r.raise_for_status()
     return r.json()
 
@@ -42,9 +44,9 @@ def p115_transfer_target(cfg):
             return p115_default_cid({"p115_target_cid": "", "p115_cookie": cfg.get("p115_cookie")})
         except Exception:
             pass
-    r = requests.get("https://webapi.115.com/files",
-                     params={"aid": 1, "cid": "0", "limit": 200, "show_dir": 1, "snap": 0},
-                     headers=p115_headers(cfg), timeout=25)
+    r = net.http_request(cfg, "GET", "https://webapi.115.com/files",
+                         params={"aid": 1, "cid": "0", "limit": 200, "show_dir": 1, "snap": 0},
+                         headers=p115_headers(cfg), timeout=25)
     r.raise_for_status()
     data = r.json().get("data")
     for x in ((data.get("list") if isinstance(data, dict) else data) or []):
@@ -120,7 +122,7 @@ def parse_share_url(url):
     return code, pwd
 
 def share_snap(cfg, code, pwd):
-    r = requests.get("https://webapi.115.com/share/snap",
+    r = net.http_request(cfg, "GET", "https://webapi.115.com/share/snap",
                      params={"share_code": code, "receive_code": pwd, "cid": 0, "limit": 100, "offset": 0},
                      headers=p115_headers(cfg), timeout=25)
     r.raise_for_status()
@@ -142,16 +144,16 @@ def share_transfer(cfg, url, pwd="", cid=None):
         raise RuntimeError("分享里没有可转存的文件")
     target = cid if cid not in (None, "") else p115_transfer_target(cfg)
     data = {"share_code": code, "receive_code": pwd, "file_id": ",".join(ids), "cid": str(target)}
-    r = requests.post("https://webapi.115.com/share/receive", data=data,
+    r = net.http_request(cfg, "POST", "https://webapi.115.com/share/receive", data=data,
                       headers=p115_headers(cfg), timeout=40)
     r.raise_for_status()
     return r.json()
 
 def p115_children(cfg, cid, limit=1000):
-    r = requests.get("https://webapi.115.com/files",
-                     params={"aid": 1, "cid": str(cid), "limit": limit, "show_dir": 1,
-                             "snap": 0, "natsort": 0, "offset": 0},
-                     headers=p115_headers(cfg), timeout=25)
+    r = net.http_request(cfg, "GET", "https://webapi.115.com/files",
+                         params={"aid": 1, "cid": str(cid), "limit": limit, "show_dir": 1,
+                                 "snap": 0, "natsort": 0, "offset": 0},
+                         headers=p115_headers(cfg), timeout=25)
     r.raise_for_status()
     d = r.json()
     data = d.get("data")
@@ -236,3 +238,43 @@ def p115_offline_list(cfg):
         })
     out.sort(key=lambda x: x["add_time"], reverse=True)
     return out
+
+def p115_mkdir(cfg, pid, name):
+    """在 pid 下创建目录，已存在则返回其 cid。"""
+    for x in p115_children(cfg, pid):
+        if x.get("n") == name and x.get("fid") is None:
+            return str(x.get("cid"))
+    r = net.http_request(cfg, "POST", "https://webapi.115.com/files/add",
+                         data={"pid": str(pid), "cname": name}, headers=p115_headers(cfg), timeout=25)
+    d = r.json() or {}
+    if not d.get("state") or not d.get("cid"):
+        raise RuntimeError(f"创建目录失败：{d.get('error') or d}")
+    return str(d["cid"])
+
+
+def p115_rename(cfg, fid, new_name):
+    form = {"fid": str(fid), "file_name": new_name, f"files_new_name[{fid}]": new_name}
+    r = net.http_request(cfg, "POST", "https://webapi.115.com/files/batch_rename",
+                         data=form, headers=p115_headers(cfg), timeout=25)
+    d = r.json() or {}
+    if not d.get("state"):
+        raise RuntimeError(f"重命名失败：{d.get('error') or d}")
+    return True
+
+
+def p115_move(cfg, fid, target_cid):
+    r = net.http_request(cfg, "POST", "https://webapi.115.com/files/move",
+                         data={"pid": str(target_cid), "fid[0]": str(fid)},
+                         headers=p115_headers(cfg), timeout=25)
+    d = r.json() or {}
+    if not d.get("state"):
+        raise RuntimeError(f"移动失败：{d.get('error') or d}")
+    return True
+
+
+def p115_delete(cfg, fid):
+    r = net.http_request(cfg, "POST", "https://webapi.115.com/files/delete",
+                         data={"fid[0]": str(fid)}, headers=p115_headers(cfg), timeout=25)
+    d = r.json() or {}
+    return bool(d.get("state"))
+
