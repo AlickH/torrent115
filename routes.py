@@ -453,7 +453,11 @@ def api_ai_models():
     if not key:
         return jsonify({"ok": False, "error": "缺少 API Key"})
     try:
-        r = http_request(cfg, "GET", base + "/models", headers={"Authorization": "Bearer " + key}, timeout=25)
+        hdrs = {"Authorization": "Bearer " + key}
+        if "opencode.ai" in base:
+            import ai_client
+            hdrs["x-opencode-session"] = ai_client._SESSION_ID
+        r = http_request(cfg, "GET", base + "/models", headers=hdrs, timeout=25)
         try:
             d = r.json()
         except Exception:
@@ -481,8 +485,11 @@ def api_ai_test():
     if not key:
         return jsonify({"ok": False, "error": "缺少 API Key"})
     try:
-        r = http_request(cfg, "POST", base + "/chat/completions",
-                         headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"},
+        hdrs = {"Authorization": "Bearer " + key, "Content-Type": "application/json"}
+        if "opencode.ai" in base:
+            import ai_client
+            hdrs["x-opencode-session"] = ai_client._SESSION_ID
+        r = http_request(cfg, "POST", base + "/chat/completions", headers=hdrs,
                          json={"model": model, "messages": [{"role": "user", "content": "ping"}], "max_tokens": 8},
                          timeout=30)
         try:

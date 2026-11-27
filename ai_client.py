@@ -3,6 +3,7 @@
 import json
 import time
 import urllib.parse
+import uuid
 
 import requests
 
@@ -27,6 +28,16 @@ def _proxies(cfg):
     return proxies_for(cfg, cfg.get("ai_base_url"))
 
 
+_SESSION_ID = uuid.uuid4().hex
+
+
+def _headers(cfg, key):
+    h = {"Authorization": "Bearer " + key, "Content-Type": "application/json"}
+    if "opencode.ai" in (cfg.get("ai_base_url") or ""):
+        h["x-opencode-session"] = _SESSION_ID
+    return h
+
+
 def _endpoint(cfg):
     base = (cfg.get("ai_base_url") or "https://api.openai.com/v1").strip().rstrip("/")
     return base + "/chat/completions"
@@ -47,8 +58,7 @@ def chat(cfg, messages, tools=None, tool_choice=None, temperature=0, timeout=DEF
     last = None
     for attempt in range(2):
         try:
-            r = requests.post(_endpoint(cfg), headers={"Authorization": "Bearer " + key,
-                                                      "Content-Type": "application/json"},
+            r = requests.post(_endpoint(cfg), headers=_headers(cfg, key),
                               json=body, proxies=_proxies(cfg), timeout=timeout)
             if r.status_code in (429, 500, 502, 503, 504) and attempt == 0:
                 last = RuntimeError(f"HTTP {r.status_code}: {r.text[:200]}")
