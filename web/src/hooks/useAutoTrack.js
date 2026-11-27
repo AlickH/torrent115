@@ -21,6 +21,9 @@ export default function useAutoTrack({ message, setCfg }) {
   const [showOptions, setShowOptions] = useState([]);
   const [showSearching, setShowSearching] = useState(false);
   const [aiKey, setAiKey] = useState('');
+  const [jevEnabled, setJevEnabled] = useState(false);
+  const [jevKey, setJevKey] = useState('');
+  const [jevBase, setJevBase] = useState('');
   const [traktToken, setTraktToken] = useState('');
   const [presets, setPresets] = useState([]);
   const [aiPresets, setAiPresets] = useState([]);
@@ -64,6 +67,9 @@ export default function useAutoTrack({ message, setCfg }) {
     });
     setPresets(d.auto_presets || []);
     setAiPresets(d.ai_presets || []);
+    setJevEnabled(!!d.jev_enabled);
+    setJevBase(d.jev_base_url || '');
+    setJevKey('');
     setCalendarSource(d.calendar_source || 'tmdb');
     setMaxEpisodes(d.auto_max_episodes != null ? d.auto_max_episodes : 10);
     setTaskTimeout(d.auto_task_timeout != null ? d.auto_task_timeout : 10);
@@ -305,11 +311,12 @@ export default function useAutoTrack({ message, setCfg }) {
       auto_res_order: autoForm.resOrder, auto_codec: autoForm.codec, auto_shows: autoShows,
       ai_enabled: autoForm.aiEnabled, ai_base_url: autoForm.aiBase, ai_model: autoForm.aiModel,
       trakt_client_id: autoForm.traktClientId, auto_presets: presets,
-      ai_presets: aiPresets, calendar_source: calendarSource, auto_max_episodes: maxEpisodes, auto_task_timeout: taskTimeout, auto_wait_timeout: waitTimeout, drivemby_enabled: drivembyEnabled,
+      ai_presets: aiPresets, calendar_source: calendarSource, jev_enabled: jevEnabled, jev_base_url: jevBase, auto_max_episodes: maxEpisodes, auto_task_timeout: taskTimeout, auto_wait_timeout: waitTimeout, drivemby_enabled: drivembyEnabled,
       auto_rank_order: rankOrder, auto_seed_tiers: seedTiers.split(',').map(x => parseInt(x, 10)).filter(x => x > 0),
       auto_tv_preset: tvPreset, auto_movie_preset: moviePreset,
     };
     if (aiKey) body.ai_api_key = aiKey;
+    if (jevKey) body.jev_api_key = jevKey;
     if (traktToken) body.trakt_token = traktToken;
     const r = await api('/api/config', { method: 'POST', body });
     setCfg(r); setAiKey(''); setTraktToken('');
@@ -498,7 +505,7 @@ export default function useAutoTrack({ message, setCfg }) {
     testAiPreset,
     fetchAiModels,
     startTraktOauth,
-    savePreset,
+    savePreset, jevEnabled, setJevEnabled, jevKey, setJevKey, jevBase, setJevBase,
     saveAuto,
     revealAi,
     revealTrakt,

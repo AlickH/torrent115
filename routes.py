@@ -277,7 +277,7 @@ def set_config():
     for k in ("pansou_url", "bitmagnet_url", "outbound_proxy", "p115_target_cid", "p115_transfer_cid",
               "auto_enabled", "auto_interval", "auto_days", "auto_max_episodes", "auto_strict_match", "auto_task_timeout", "auto_wait_timeout", "auto_use_local", "local_client", "local_qbt_url", "local_qbt_user", "local_qbt_password", "local_qbt_sock", "aria2_url", "aria2_secret", "transmission_url", "transmission_user", "transmission_password", "local_save_path", "local_move_enabled", "local_done_path", "auto_upload_115", "p115_upload_cid", "auto_upload_delete_local", "auto_presets", "auto_tv_preset", "auto_movie_preset", "ai_presets", "calendar_source", "auto_shows", "auto_res_order", "auto_rank_order", "auto_seed_tiers", "auto_size_big", "auto_source_order",
               "auto_max_size_gb", "auto_min_seeders", "auto_codec", "auto_dry_run", "auto_exclude_cam",
-              "ai_enabled", "ai_base_url", "ai_model", "trakt_client_id",
+              "ai_enabled", "ai_base_url", "ai_model", "trakt_client_id", "jev_enabled", "jev_base_url",
               "tmdb_api_key", "monitor_enabled", "monitor_interval", "monitor_cid",
               "drivemby_url", "drivemby_token", "drivemby_prefix", "drivemby_enabled", "jackett_url", "jackett_api_key"):
         if k in body:
@@ -286,6 +286,8 @@ def set_config():
         cfg["p115_cookie"] = body["p115_cookie"].strip()
     if body.get("ai_api_key"):
         cfg["ai_api_key"] = body["ai_api_key"].strip()
+    if body.get("jev_api_key"):
+        cfg["jev_api_key"] = body["jev_api_key"].strip()
     if body.get("trakt_token"):
         cfg["trakt_token"] = body["trakt_token"].strip()
     if isinstance(body.get("sites"), dict):
@@ -506,7 +508,7 @@ def api_auto_status():
                                    "auto_strict_match", "auto_task_timeout", "auto_wait_timeout", "auto_use_local", "local_client", "local_qbt_url", "local_qbt_user", "local_qbt_password", "local_qbt_sock", "aria2_url", "aria2_secret", "transmission_url", "transmission_user", "transmission_password", "local_save_path", "local_move_enabled", "local_done_path", "auto_upload_115", "p115_upload_cid", "auto_upload_delete_local", "auto_presets", "auto_tv_preset", "auto_movie_preset",
                                    "ai_presets", "calendar_source", "auto_shows", "auto_res_order",
                                    "auto_max_size_gb", "auto_min_seeders", "auto_codec", "auto_exclude_cam",
-                                   "auto_dry_run", "ai_enabled", "ai_base_url", "ai_model", "trakt_client_id", "drivemby_enabled", "auto_rank_order", "auto_seed_tiers", "auto_size_big", "auto_source_order")}
+                                   "auto_dry_run", "ai_enabled", "ai_base_url", "ai_model", "trakt_client_id", "jev_enabled", "jev_base_url", "drivemby_enabled", "auto_rank_order", "auto_seed_tiers", "auto_size_big", "auto_source_order")}
     pub["has_trakt"] = bool(cfg.get("trakt_token"))
     pub["has_ai"] = bool(cfg.get("ai_api_key"))
     pub["has_tmdb"] = bool(cfg.get("tmdb_api_key"))

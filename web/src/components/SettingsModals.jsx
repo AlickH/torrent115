@@ -14,6 +14,7 @@ export function SettingsModal(props) {
     targetCid, setTargetCid, transferCid, setTransferCid,
     tmdbText, setTmdbText,
     pansouUrl, setPansouUrl, bitmagnetUrl, setBitmagnetUrl, jackettUrl, setJackettUrl, jackettApiKey, setJackettApiKey, outboundProxy, setOutboundProxy,
+    jevEnabled, setJevEnabled, jevKey, setJevKey, jevBase, setJevBase,
     maxEpisodes, setMaxEpisodes, taskTimeout, setTaskTimeout, waitTimeout, setWaitTimeout, drivembyEnabled, setDrivembyEnabled,
     localSavePath, setLocalSavePath, localMoveEnabled, setLocalMoveEnabled, localDonePath, setLocalDonePath,
     localClient, setLocalClient, localQbtUrl, setLocalQbtUrl, localQbtUser, setLocalQbtUser, localQbtPassword, setLocalQbtPassword, localQbtSock, setLocalQbtSock,
@@ -168,6 +169,23 @@ export function SettingsModal(props) {
           {!aiPresets.length ? <Typography.Text type="secondary" style={{ fontSize: 12 }}>还没有 AI 预设</Typography.Text> : null}
         </Flex>
         <Button onClick={newAiPreset}>新建 AI 预设</Button>
+        <Divider orientation="left" style={{ margin: '16px 0 12px' }}>候选预筛（Jev）</Divider>
+        <Form.Item label="启用 Jev 预筛">
+          <Switch checked={jevEnabled} onChange={setJevEnabled} />
+        </Form.Item>
+        <Form.Item label="Jev API Key">
+          <Input.Password value={jevKey} onChange={e => setJevKey(e.target.value)}
+            placeholder={auto?.has_jev ? '已配置（留空＝不修改）' : 'OpenRouter 或 TypeSafe 的 Key'} />
+        </Form.Item>
+        <Form.Item label="Jev Base URL（留空＝OpenRouter decisions 端点）">
+          <Input value={jevBase} onChange={e => setJevBase(e.target.value)} placeholder="TypeSafe 官方填 https://api.typesafe.ai/v1/systemone" />
+        </Form.Item>
+        <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
+          AI 选种前先由 Jev 判断每条候选是否指向目标作品（&lt;0.3 直接剔除，&lt;0.7 标记「相关度存疑」）。未配置 Key 时不产生任何调用。
+          Key 获取：<a href="https://openrouter.ai/typesafe/jev-latest" target="_blank" rel="noreferrer">OpenRouter →</a>
+          <span style={{ margin: '0 6px' }}>·</span>
+          <a href="https://console.typesafe.ai/keys" target="_blank" rel="noreferrer">TypeSafe →</a>
+        </Typography.Paragraph>
       </Form>
 
     </>

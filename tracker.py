@@ -10,6 +10,9 @@ import requests
 
 import localtorrent
 from localtorrent import has_progress, is_completed
+import agent
+import jev
+import websearch
 
 _LOCAL = {"client": None}
 
@@ -679,6 +682,63 @@ def _label(ep):
     return f"{ep.get('show') or ''} {ep['key']}".strip()
 
 
+DEAD_LINK_HINTS = ("过期", "取消", "访问码", "错误的链接", "失效", "不存在", "已删除", "解析失败")
+SYSTEMIC_HINTS = ("配额", "额度", "登录超时", "登录失效", "VIP", "鉴权", "会员")
+
+
+def _is_systemic(msg):
+    low = (msg or "").lower()
+    return any(h.lower() in low for h in SYSTEMIC_HINTS)
+
+
+def _is_dead_link(msg):
+    return any(h in (msg or "") for h in DEAD_LINK_HINTS)
+
+
+def _task_of(cfg, candidate):
+    h = _hash_of(candidate.get("url"))
+    if not h:
+        return None
+    chk = _DEPS.get("check_tasks")
+    if not chk:
+        return None
+    try:
+        return (chk(cfg) or {}).get(h)
+    except Exception:
+        return None
+
+
+def _decide_picks(cfg, eff, ep, ranked):
+    """让 agent 读证据后给出候选顺序；不可用时返回 None（调用方回落 ranked[0]）。"""
+    def search_more(keyword):
+        try:
+            items = _DEPS["search_all"](cfg, [keyword]) or []
+        except Exception as e:
+            log(f"[ai] {_label(ep)} 追加搜索失败: {e}")
+            return []
+        return rank_candidates(eff, items, ep)
+
+    def research(query):
+        if not query:
+            return ""
+        hits = websearch.search(cfg, query)
+        return websearch.render(hits) if hits else "没有查到网页证据"
+
+    try:
+        picks, no_cov, reason = agent.decide(cfg, ep, ranked, search_more,
+                                             lambda c: _task_of(cfg, c), research)
+    except Exception as e:
+        log(f"[ai] {_label(ep)} agent 失败，回落默认排序: {e}")
+        return None
+    if no_cov:
+        log(f"[ai] {_label(ep)} agent 判定无可用资源: {reason}")
+        return []
+    if picks:
+        log(f"[ai] {_label(ep)} agent 选择 {len(picks)} 个候选: {reason}")
+        return picks
+    return None
+
+
 def _process_episode(cfg, ep, eff, dry_run, excluded, timeout_min):
     queries = ep.get("queries") or [ep["query"]]
     candidates = _DEPS["search_all"](cfg, queries)
@@ -695,30 +755,63 @@ def _process_episode(cfg, ep, eff, dry_run, excluded, timeout_min):
     if not ranked:
         log(f"[auto] {_label(ep)} 未找到合适资源")
         return "none"
-    pick = ai_pick(eff, ep, ranked) or ranked[0]
+
+    if jev.available(eff):
+        ranked, dropped, uncertain = jev.prefilter(eff, ep, ranked)
+        if dropped:
+            log(f"[auto] {_label(ep)} Jev 预筛剔除 {dropped} 条无关候选")
+        if uncertain:
+            log(f"[auto] {_label(ep)} {uncertain} 条候选相关度存疑，保留给 AI 判断")
+        if not ranked:
+            log(f"[auto] {_label(ep)} 候选全部被预筛剔除，换个关键词再试")
+            return "none"
+
+    picks = None
+    if eff.get("ai_enabled"):
+        picks = _decide_picks(cfg, eff, ep, ranked)
+        if picks is not None and not picks:
+            return "none"
+    if not picks:
+        picks = ranked[:1]
+
+    pick = picks[0]
     desc = f"{pick.get('title','')[:90]} (来源={pick.get('source') or '未知'}, seeders={pick.get('seeders')}, size={_size_gb(pick)}GB)"
     if dry_run:
         log(f"[auto][演练] {_label(ep)} 将转存: {desc}")
         return "dry"
+
     if pick.get("kind") == "115":
-        try:
-            _DEPS["transfer_share"](cfg, pick["url"], pick.get("password") or "")
-        except Exception as e:
-            log(f"[auto] {_label(ep)} 转存失败: {e}")
-            return "fail"
-        with _STATE_LOCK:
-            _STATE["done"][ep["key"]] = int(time.time())
-            _STATE["pending"].pop(ep["key"], None)
-            _save()
-        log(f"[auto] {_label(ep)} 转存成功: {desc}")
-        _notify_drivemby(cfg, ep)
-        return "done"
+        last_err = ""
+        for cand in picks[:3]:
+            cdesc = f"{cand.get('title','')[:80]} (来源={cand.get('source') or '未知'})"
+            try:
+                _DEPS["transfer_share"](cfg, cand["url"], cand.get("password") or "")
+            except Exception as e:
+                last_err = str(e)
+                if _is_systemic(last_err):
+                    log(f"[auto] {_label(ep)} 账号被限制（配额/登录/VIP/鉴权），停止本次转存: {last_err[:120]}")
+                    return "fail"
+                if _is_dead_link(last_err):
+                    log(f"[auto] {_label(ep)} 死链，换下一个候选: {cdesc} -> {last_err[:80]}")
+                    continue
+                log(f"[auto] {_label(ep)} 转存失败: {last_err[:160]}")
+                return "fail"
+            with _STATE_LOCK:
+                _STATE["done"][ep["key"]] = int(time.time())
+                _STATE["pending"].pop(ep["key"], None)
+                _save()
+            log(f"[auto] {_label(ep)} 转存成功: {cdesc}")
+            _notify_drivemby(cfg, ep)
+            return "done"
+        log(f"[auto] {_label(ep)} 候选都是死链，下轮再试: {last_err[:120]}")
+        return "fail"
+
+    local_hash = None
     h = _hash_of(pick.get("url"))
     tried = set(excluded or [])
     if h:
         tried.add(h)
-    _chk = _DEPS.get("check_tasks")
-    existing = ((_chk(cfg) if _chk else {}) or {}).get(h) if h else None
+    existing = _task_of(cfg, pick)
     if existing:
         pct = existing.get("percentDone") or existing.get("display_percent") or 0
         with _STATE_LOCK:
@@ -730,9 +823,11 @@ def _process_episode(cfg, ep, eff, dry_run, excluded, timeout_min):
     try:
         _DEPS["add_magnets"](cfg, [pick["url"]])
     except Exception as e:
-        log(f"[auto] {_label(ep)} 提交云下载失败: {e}")
+        if _is_systemic(str(e)):
+            log(f"[auto] {_label(ep)} 账号被限制，停止提交: {str(e)[:120]}")
+        else:
+            log(f"[auto] {_label(ep)} 提交云下载失败: {str(e)[:160]}")
         return "fail"
-    local_hash = None
     if eff.get("auto_use_local"):
         lc = _local_client(cfg)
         if not lc:

@@ -576,7 +576,6 @@ export default function App({ mode, setMode, dark }) {
     <Menu
       className="app-sidebar-menu"
       mode="inline"
-      selectedKeys={['search']}
       style={{ border: 'none', background: 'transparent' }}
       items={[
         { key: 'search', icon: <SearchOutlined />, label: '搜索' },
