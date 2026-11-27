@@ -772,7 +772,7 @@ def _process_episode(cfg, ep, eff, dry_run, excluded, timeout_min):
         if picks is not None and not picks:
             return "none"
     if not picks:
-        picks = ranked[:1]
+        picks = ranked[:3]
 
     pick = picks[0]
     desc = f"{pick.get('title','')[:90]} (来源={pick.get('source') or '未知'}, seeders={pick.get('seeders')}, size={_size_gb(pick)}GB)"
