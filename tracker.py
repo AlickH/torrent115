@@ -11,6 +11,7 @@ import requests
 import localtorrent
 from localtorrent import has_progress, is_completed
 import agent
+import arcmap
 import websearch
 
 _LOCAL = {"client": None}
@@ -268,6 +269,7 @@ def _tmdb_recent(cfg, days, shows=None):
                 log(f"[auto] {name}：TMDB 第 {sn} 季请求失败，稍后重试")
                 before = -1
                 continue
+            season_total = int(sd.get("episode_count") or len(sd.get("episodes") or []) or 0)
             for ep in sd.get("episodes") or []:
                 ad = ep.get("air_date")
                 if not ad:
@@ -286,7 +288,8 @@ def _tmdb_recent(cfg, days, shows=None):
                 out.append({
                     "key": f"{tid}-S{sn:02d}E{en:02d}", "tmdb_id": tid, "media_type": "tv",
                     "show": name, "show_en": show_en,
-                    "season": sn, "episode": en, "title": ep.get("name") or "",
+                    "season": sn, "episode": en, "season_total": season_total,
+                    "title": ep.get("name") or "",
                     "air_date": ad, "query": queries[0],
                     "queries": list(dict.fromkeys([q for q in queries if q.strip()])),
                 })
@@ -525,7 +528,7 @@ def rank_candidates(cfg, items, episode=None):
             continue
         if exclude_cam and is_cam_release(it.get("title")):
             continue
-        if strict and episode and it.get("kind") != "115" and not strict_match(it, episode):
+        if strict and episode and it.get("kind") != "115"                 and not it.get("_arc_ok") and not strict_match(it, episode):
             continue
         if it.get("kind") == "115":
             out.append(it)
@@ -755,6 +758,50 @@ def _decide_picks(cfg, eff, ep, ranked):
     return None
 
 
+def _arc_candidates(cfg, eff, ep):
+    """TV 缺集在常规关键词下搜不到时，用篇章映射按「篇章 第N话」再搜一轮。"""
+    if (ep.get("media_type") or "tv") != "tv":
+        return []
+    season, episode = int(ep.get("season") or 1), int(ep.get("episode") or 0)
+    if not episode:
+        return []
+    total = int(ep.get("season_total") or ep.get("total_episodes") or max(episode, 1))
+    arcs = arcmap.arcs_for(cfg, _DATA_DIR, ep.get("show") or "", ep.get("show_en") or "",
+                           ep.get("tmdb_id"), season, total)
+    if not arcs:
+        return []
+    arc_name, local = arcmap.local_episode(arcs, episode)
+    if not arc_name:
+        return []
+    queries = [
+        f"{ep.get('show') or ''} {arc_name} 第{local:02d}话",
+        f"{ep.get('show') or ''} {arc_name} {local}",
+        f"{ep.get('show_en') or ep.get('show') or ''} {arc_name} {local}",
+    ]
+    try:
+        items = _DEPS["search_all"](cfg, queries) or []
+    except Exception as e:
+        log(f"[auto] {_label(ep)} 篇章搜索失败: {e}")
+        return []
+    hit = []
+    for it in items:
+        title = it.get("title") or ""
+        low = title.lower()
+        if arc_name.lower() not in low and (ep.get("show_en") or "").lower() not in low:
+            continue
+        if not re.search(rf"(?<![0-9])0*{local}(?![0-9])", title):
+            continue
+        if not is_video_release(title) or is_adult_release(it):
+            continue
+        tagged = dict(it)
+        tagged["_arc_ok"] = True
+        tagged["_arc"] = f"{arc_name} 第{local}话"
+        hit.append(tagged)
+    if hit:
+        log(f"[auto] {_label(ep)} 篇章映射：{arc_name} 第 {local} 话 → 命中 {len(hit)} 条")
+    return hit
+
+
 def _process_episode(cfg, ep, eff, dry_run, excluded, timeout_min):
     queries = ep.get("queries") or [ep["query"]]
     candidates = _DEPS["search_all"](cfg, queries)
@@ -768,6 +815,10 @@ def _process_episode(cfg, ep, eff, dry_run, excluded, timeout_min):
             log(f"[auto] {_label(ep)} 候选都尝试过了，重新枚举")
     if eff.get("auto_strict_match"):
         log(f"[auto] {_label(ep)} 候选 {total} 条，严格匹配后 {len(ranked)} 条")
+    if not ranked and (ep.get("media_type") or "tv") == "tv":
+        extra = _arc_candidates(cfg, eff, ep)
+        if extra:
+            ranked = rank_candidates(eff, extra, ep)
     if not ranked:
         log(f"[auto] {_label(ep)} 未找到合适资源")
         return "none"
