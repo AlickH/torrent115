@@ -7,5 +7,4 @@ gunicorn>=21.2
 p115sync>=0.1
 typing_extensions>=4.16
 libtorrent>=2.1
-cryptography
 lz4

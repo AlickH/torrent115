@@ -69,14 +69,10 @@ def _pkcs7_unpad(data):
 
 
 def _aes_cbc(data, encrypt):
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-    cipher = Cipher(algorithms.AES(_AES_KEY), modes.CBC(_AES_IV))
+    from Crypto.Cipher import AES
     if encrypt:
-        enc = cipher.encryptor()
-        return enc.update(_pkcs7_pad(data)) + enc.finalize()
-    data = data[:len(data) & -16]
-    dec = cipher.decryptor()
-    return _pkcs7_unpad(dec.update(data) + dec.finalize())
+        return AES.new(_AES_KEY, AES.MODE_CBC, _AES_IV).encrypt(_pkcs7_pad(data))
+    return _pkcs7_unpad(AES.new(_AES_KEY, AES.MODE_CBC, _AES_IV).decrypt(data[:len(data) & -16]))
 
 
 def _lz4_decompress(source):

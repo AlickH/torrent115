@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Breadcrumb, Button, Empty, Progress, Space, Table, Tabs, Tag, Typography, message } from 'antd';
-import { CloudDownloadOutlined, FolderOutlined, FileOutlined, ReloadOutlined } from '@ant-design/icons';
-import { api } from '../api.js';
+import { Breadcrumb, Button, Empty, Progress, Space, Table, Tabs, Tag, Tooltip, Typography, message } from 'antd';
+import { CloudDownloadOutlined, FolderOutlined, FileOutlined, ReloadOutlined, PlayCircleOutlined, FontSizeOutlined } from '@ant-design/icons';
+import { api, APP_BASE } from '../api.js';
 
 function size(n) {
   if (!n) return '-';
@@ -62,6 +62,23 @@ export default function Yun115() {
     setStack(next); loadFiles(next[next.length - 1].cid);
   };
 
+  const VIDEO_EXT = /\.(mkv|mp4|avi|ts|m2ts|mov|wmv|flv|webm)$/i;
+  const playable = r => !r.is_dir && VIDEO_EXT.test(r.name || '') && r.pick_code;
+  const play = r => window.open(`${APP_BASE}/api/115/play?pc=${encodeURIComponent(r.pick_code)}`, '_blank');
+  const fixSubs = async r => {
+    const hide = message.loading('检测字幕中…', 0);
+    try {
+      const res = await api('/api/subs/fix', { method: 'POST', body: {
+        pickcode: r.pick_code, cid: stack[stack.length - 1].cid, name: r.name,
+        meta: { title: r.name.replace(VIDEO_EXT, '') },
+      } });
+      hide();
+      const item = (res.results || [])[0];
+      if (!res.ok) message.error(res.error || '处理失败');
+      else if (item) message.info(item.detail);
+    } catch (e) { hide(); message.error(e.message || '处理失败'); }
+  };
+
   const fileCols = [
     { title: '名称', render: (_, r) => (
       <Space>
@@ -71,6 +88,16 @@ export default function Yun115() {
     ) },
     { title: '大小', width: 120, render: (_, r) => r.is_dir ? '-' : size(r.size) },
     { title: '时间', width: 190, render: (_, r) => when(r.mtime) },
+    { title: '操作', width: 150, render: (_, r) => r.is_dir ? '-' : (
+      <Space size={4}>
+        {playable(r) ? (
+          <Tooltip title="播放"><Button size="small" icon={<PlayCircleOutlined />} onClick={() => play(r)} /></Tooltip>
+        ) : null}
+        {playable(r) ? (
+          <Tooltip title="补中文字幕"><Button size="small" icon={<FontSizeOutlined />} onClick={() => fixSubs(r)} /></Tooltip>
+        ) : null}
+      </Space>
+    ) },
   ];
   const taskCols = [
     { title: '任务', dataIndex: 'name', ellipsis: true, render: (v, r) => (

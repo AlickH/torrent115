@@ -212,7 +212,7 @@ def p115_list_files(cfg, cid="0"):
                         "size": 0, "mtime": t})
         else:
             out.append({"id": str(x.get("fid") or ""), "name": x.get("n") or "", "is_dir": False,
-                        "size": int(x.get("s") or 0), "mtime": t})
+                        "size": int(x.get("s") or 0), "mtime": t, "pick_code": x.get("pc") or ""})
     out.sort(key=lambda x: (not x["is_dir"], x["name"].lower()))
     return out
 

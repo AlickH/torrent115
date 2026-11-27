@@ -267,3 +267,85 @@ def ensure(cfg, video, meta=None, workdir="."):
     with open(target, "w", encoding="utf-8") as fh:
         fh.write(_render_srt(translated))
     return {"action": "translated", "detail": f"已翻译 {len(cues)} 条 → {os.path.basename(target)}"}
+
+def _probe_cmd(url, ua):
+    return ["ffprobe", "-v", "error", "-user_agent", ua, "-select_streams", "s",
+            "-show_entries", "stream=index,codec_name:stream_tags=language,title",
+            "-of", "json", url]
+
+
+def probe_remote(cfg, pickcode, ua="Mozilla/5.0"):
+    """115 云端文件：生成直链（UA 绑定）后只读头部拿字幕轨。"""
+    import p115direct
+    url = p115direct.download_url(cfg, pickcode, user_agent=ua)
+    r = _run(_probe_cmd(url, ua), timeout=180)
+    if r.returncode != 0:
+        raise RuntimeError((r.stderr or "").strip()[:200])
+    try:
+        streams = (json.loads(r.stdout or "{}") or {}).get("streams") or []
+    except Exception:
+        streams = []
+    out = []
+    for s in streams:
+        codec = (s.get("codec_name") or "").lower()
+        tags = s.get("tags") or {}
+        out.append({"index": int(s.get("index")), "codec": codec,
+                    "type": "image" if codec in IMAGE_CODECS else "text",
+                    "lang": (tags.get("language") or "").lower(), "title": tags.get("title") or ""})
+    return url, out
+
+
+def ensure_remote(cfg, pickcode, meta=None, upload_cid=None, ua="Mozilla/5.0", workdir="/tmp"):
+    """云端阶梯：内封中字 → assrt → 抽轨翻译 → 可选上传回 115。"""
+    meta = meta or {}
+    title = (meta.get("title") or "subtitle").replace("/", "_")
+    url, tracks = probe_remote(cfg, pickcode, ua=ua)
+    if any(is_zh_track(t) for t in tracks):
+        return {"action": "embedded", "detail": "内封已含中文字幕"}
+    texts = [t for t in tracks if t["type"] == "text"]
+    if not texts and any(t["type"] == "image" for t in tracks):
+        return {"action": "image-only", "detail": "只有图形字幕（PGS/VobSub），无法翻译"}
+
+    if assrt.enabled(cfg):
+        found, _items = _fetch_assrt(cfg, title, meta)
+        if found:
+            target_dir = os.path.dirname(url) and workdir
+            fake_video = os.path.join(workdir, title + ".mkv")
+            path = _save_zip_files(cfg, found["files"], fake_video, workdir)
+            if path:
+                uploaded = _upload(cfg, path, upload_cid)
+                return {"action": "assrt", "detail": "已从 assrt 下载" + uploaded}
+
+    track = _pick_source_track(tracks)
+    if not track:
+        return {"action": "no-track", "detail": "没有可翻译的文本字幕轨"}
+    if not cfg.get("ai_enabled") or not (cfg.get("ai_api_key") or "").strip():
+        return {"action": "no-track", "detail": "需要翻译但没有配置 AI 模型"}
+
+    src = os.path.join(workdir, "src.srt")
+    r = _run(["ffmpeg", "-y", "-v", "error", "-user_agent", ua, "-i", url,
+              "-map", f"0:{track['index']}", "-c:s", "srt", src], timeout=3600)
+    if r.returncode != 0:
+        raise RuntimeError((r.stderr or "").strip()[:200])
+    with open(src, encoding="utf-8", errors="ignore") as fh:
+        cues = _parse_srt(fh.read())
+    os.remove(src)
+    if not cues:
+        return {"action": "no-track", "detail": "字幕轨为空"}
+    translated = translate(cfg, cues, meta)
+    target = os.path.join(workdir, title + ".zh.srt")
+    with open(target, "w", encoding="utf-8") as fh:
+        fh.write(_render_srt(translated))
+    uploaded = _upload(cfg, target, upload_cid)
+    return {"action": "translated", "detail": f"已翻译 {len(cues)} 条{uploaded}"}
+
+
+def _upload(cfg, path, cid):
+    if not cid:
+        return f"，本地文件：{path}"
+    try:
+        import p115upload
+        p115upload.upload_file(cfg, path, cid)
+        return "，已上传回 115"
+    except Exception as e:
+        return f"，上传失败：{str(e)[:80]}"

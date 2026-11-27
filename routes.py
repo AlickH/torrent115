@@ -813,9 +813,16 @@ def api_115_uploads():
 def api_subs_probe():
     body = request.get_json(force=True, silent=True) or {}
     path = (body.get("path") or "").strip()
+    import subtitles
+    if body.get("pickcode"):
+        try:
+            _url, tracks = subtitles.probe_remote(load_config(), body["pickcode"])
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)[:200]})
+        return jsonify({"ok": True, "tracks": tracks,
+                        "has_zh": any(subtitles.is_zh_track(t) for t in tracks), "external": None})
     if not path or not os.path.isfile(path):
         return jsonify({"ok": False, "error": "文件不存在"})
-    import subtitles
     tracks = subtitles.probe(path)
     return jsonify({"ok": True, "tracks": tracks,
                     "has_zh": any(subtitles.is_zh_track(t) for t in tracks),
@@ -828,6 +835,14 @@ def api_subs_fix():
     import subtitles
     body = request.get_json(force=True, silent=True) or {}
     cfg = load_config()
+    if body.get("pickcode"):
+        with tempfile.TemporaryDirectory() as tmp:
+            try:
+                res = subtitles.ensure_remote(cfg, body["pickcode"], body.get("meta") or {},
+                                              body.get("cid"), workdir=tmp)
+            except Exception as e:
+                res = {"action": "failed", "detail": str(e)[:200]}
+        return jsonify({"ok": True, "results": [{"file": body.get("name") or body["pickcode"], **res}]})
     path = (body.get("path") or "").strip()
     if not path and body.get("hash"):
         import btdownloader
@@ -858,4 +873,18 @@ def api_subs_fix():
             except Exception as e:
                 results.append({"file": os.path.basename(video), "action": "failed", "detail": str(e)[:200]})
     return jsonify({"ok": True, "results": results})
+
+@bp.route("/api/115/play")
+def api_115_play():
+    import p115direct
+    from flask import redirect
+    pc = (request.args.get("pc") or "").strip()
+    if not pc:
+        return jsonify({"ok": False, "error": "缺少 pick_code"})
+    ua = (request.headers.get("User-Agent") or "Mozilla/5.0").strip()
+    try:
+        url = p115direct.download_url(load_config(), pc, user_agent=ua)
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)[:200]})
+    return redirect(url)
 
