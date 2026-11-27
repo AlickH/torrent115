@@ -20,8 +20,9 @@ MOVIE_RULES = "`target.aliases` 是原名/别名,候选用这些名字也算指�
 
 
 def _proxies(cfg):
-    proxy = (cfg.get("outbound_proxy") or "").strip()
-    return {"http": proxy, "https": proxy} if proxy else None
+    import ai_client
+    url = (cfg.get("jev_base_url") or "").strip() or OPENROUTER_DECISIONS
+    return ai_client.proxies_for(cfg, url)
 
 
 def _instruction(target, key):

@@ -2,15 +2,29 @@
 """OpenAI 兼容大模型调用：chat / tool-calling / JSON。"""
 import json
 import time
+import urllib.parse
 
 import requests
 
 DEFAULT_TIMEOUT = 60
 
 
-def _proxies(cfg):
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1", "0.0.0.0"}
+
+
+def proxies_for(cfg, url):
+    """本地端点（ollama / LM Studio / 自建网关）不能走出口代理。"""
     proxy = (cfg.get("outbound_proxy") or "").strip()
-    return {"http": proxy, "https": proxy} if proxy else None
+    if not proxy:
+        return None
+    host = (urllib.parse.urlparse(url or "").hostname or "").lower()
+    if host in LOOPBACK_HOSTS:
+        return None
+    return {"http": proxy, "https": proxy}
+
+
+def _proxies(cfg):
+    return proxies_for(cfg, cfg.get("ai_base_url"))
 
 
 def _endpoint(cfg):

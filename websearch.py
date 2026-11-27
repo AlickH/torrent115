@@ -9,9 +9,9 @@ PARALLEL_MCP = "https://search.parallel.ai/mcp"
 UA = "torrent115 (+https://github.com/AlickH/torrent115)"
 
 
-def _proxies(cfg):
-    proxy = (cfg.get("outbound_proxy") or "").strip()
-    return {"http": proxy, "https": proxy} if proxy else None
+def _proxies(cfg, url=None):
+    import ai_client
+    return ai_client.proxies_for(cfg, url or PARALLEL_MCP)
 
 
 def _is_deepseek(base_url):
@@ -83,7 +83,7 @@ def _deepseek(cfg, query, limit, timeout):
                                "Content-Type": "application/json",
                                "User-Agent": UA},
                       json={"query": query[:128], "count": limit},
-                      proxies=_proxies(cfg), timeout=timeout)
+                      proxies=_proxies(cfg, base + "/v1/tools/search"), timeout=timeout)
     r.raise_for_status()
     hits = []
     for item in (r.json().get("results") or []):
