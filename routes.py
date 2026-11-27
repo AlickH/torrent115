@@ -829,10 +829,11 @@ def api_jev_test():
     ]
     started = time.time()
     try:
-        kept, dropped, uncertain = jev.prefilter(cfg, target, rows)
+        scores = jev.judge(cfg, target, rows)
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)[:200]})
     elapsed = int((time.time() - started) * 1000)
-    return jsonify({"ok": True, "ms": elapsed, "kept": len(kept), "dropped": dropped,
-                    "uncertain": uncertain, "model": jev.JEV_MODEL,
+    dropped = sum(1 for ident, nsfw in scores if jev._drop(ident, nsfw))
+    return jsonify({"ok": True, "ms": elapsed, "kept": len(scores) - dropped, "dropped": dropped,
+                    "uncertain": 0, "model": jev.JEV_MODEL,
                     "base_url": (cfg.get("jev_base_url") or "").strip() or jev.OPENROUTER_DECISIONS})

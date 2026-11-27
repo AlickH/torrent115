@@ -86,6 +86,11 @@ def _drop(ident, nsfw):
     return ident is not None and ident < DROP_BELOW
 
 
+def judge(cfg, target, rows):
+    """连通性测试入口：不加 fail-open，异常直接抛出。"""
+    return _judge_chunk(cfg, target, rows)
+
+
 def prefilter(cfg, target, rows):
     """返回 (kept, dropped_count, uncertain_marked)。任何失败都放行（fail-open）。"""
     if not available(cfg) or not rows:

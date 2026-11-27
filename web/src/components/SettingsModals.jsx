@@ -193,6 +193,9 @@ export function SettingsModal(props) {
               placeholder={auto?.has_jev ? '已配置（留空＝不修改）' : 'OpenRouter 或 TypeSafe 的 Key'} />
             <Button loading={jevTesting} onClick={testJev}>测试</Button>
           </Space.Compact>
+          {jevEnabled && !auto?.has_jev && !jevKey ? (
+            <Typography.Text type="warning" style={{ fontSize: 12 }}>已启用但未配置 Key，筛选不会生效</Typography.Text>
+          ) : null}
           {jevTestResult ? (
             <Typography.Text type={jevTestResult.ok ? 'success' : 'danger'} style={{ fontSize: 12 }}>
               {jevTestResult.ok
