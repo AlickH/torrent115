@@ -278,7 +278,7 @@ def set_config():
               "auto_enabled", "auto_interval", "auto_days", "auto_max_episodes", "auto_strict_match", "auto_task_timeout", "auto_wait_timeout", "auto_use_local", "local_client", "local_qbt_url", "local_qbt_user", "local_qbt_password", "local_qbt_sock", "aria2_url", "aria2_secret", "transmission_url", "transmission_user", "transmission_password", "local_save_path", "local_move_enabled", "local_done_path", "auto_upload_115", "p115_upload_cid", "auto_upload_delete_local", "auto_presets", "auto_tv_preset", "auto_movie_preset", "ai_presets", "calendar_source", "auto_shows", "auto_res_order", "auto_rank_order", "auto_seed_tiers", "auto_size_big", "auto_source_order",
               "auto_max_size_gb", "auto_min_seeders", "auto_codec", "auto_dry_run", "auto_exclude_cam",
               "ai_enabled", "ai_base_url", "ai_model", "trakt_client_id",
-              "tmdb_api_key", "monitor_enabled", "monitor_interval", "monitor_cid",
+              "tmdb_api_key", "monitor_enabled", "assrt_token", "monitor_interval", "monitor_cid",
               "drivemby_url", "drivemby_token", "drivemby_prefix", "drivemby_enabled", "jackett_url", "jackett_api_key"):
         if k in body:
             cfg[k] = body[k]
@@ -286,6 +286,8 @@ def set_config():
         cfg["p115_cookie"] = body["p115_cookie"].strip()
     if body.get("ai_api_key"):
         cfg["ai_api_key"] = body["ai_api_key"].strip()
+    if body.get("assrt_token"):
+        cfg["assrt_token"] = body["assrt_token"].strip()
     if body.get("trakt_token"):
         cfg["trakt_token"] = body["trakt_token"].strip()
     if isinstance(body.get("sites"), dict):
@@ -509,6 +511,7 @@ def api_auto_status():
                                    "auto_dry_run", "ai_enabled", "ai_base_url", "ai_model", "trakt_client_id", "drivemby_enabled", "auto_rank_order", "auto_seed_tiers", "auto_size_big", "auto_source_order")}
     pub["has_trakt"] = bool(cfg.get("trakt_token"))
     pub["has_ai"] = bool(cfg.get("ai_api_key"))
+    pub["has_assrt"] = bool(cfg.get("assrt_token"))
     pub["has_tmdb"] = bool(cfg.get("tmdb_api_key"))
     pub["ai_presets"] = [dict({k: v for k, v in a.items() if k != "api_key"}, has_key=bool(a.get("api_key"))) for a in (cfg.get("ai_presets") or [])]
     pub.update(auto_track.status())
@@ -805,3 +808,54 @@ def api_115_uploads():
         return jsonify({"ok": True, "uploads": p115upload.uploads()})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e), "uploads": []}), 500
+
+@bp.route("/api/subs/probe", methods=["POST"])
+def api_subs_probe():
+    body = request.get_json(force=True, silent=True) or {}
+    path = (body.get("path") or "").strip()
+    if not path or not os.path.isfile(path):
+        return jsonify({"ok": False, "error": "文件不存在"})
+    import subtitles
+    tracks = subtitles.probe(path)
+    return jsonify({"ok": True, "tracks": tracks,
+                    "has_zh": any(subtitles.is_zh_track(t) for t in tracks),
+                    "external": subtitles.external_subs(path)})
+
+
+@bp.route("/api/subs/fix", methods=["POST"])
+def api_subs_fix():
+    import tempfile
+    import subtitles
+    body = request.get_json(force=True, silent=True) or {}
+    cfg = load_config()
+    path = (body.get("path") or "").strip()
+    if not path and body.get("hash"):
+        import btdownloader
+        task = next((t for t in btdownloader.tasks() if t["hash"] == str(body["hash"]).lower()), None)
+        if not task:
+            return jsonify({"ok": False, "error": "任务不存在"})
+        path = os.path.join(task.get("save_path") or "", task.get("name") or "")
+    if not path or not os.path.exists(path):
+        return jsonify({"ok": False, "error": "文件不存在"})
+    if os.path.isdir(path):
+        vids = []
+        for root, _dirs, files in os.walk(path):
+            for fn in files:
+                if fn.lower().endswith(subtitles.VIDEO_EXT):
+                    vids.append(os.path.join(root, fn))
+            if len(vids) >= 5:
+                break
+        targets = sorted(vids)[:5]
+    else:
+        targets = [path]
+    if not targets:
+        return jsonify({"ok": False, "error": "目录里没有视频文件"})
+    results = []
+    with tempfile.TemporaryDirectory() as tmp:
+        for video in targets:
+            try:
+                results.append({"file": os.path.basename(video), **subtitles.ensure(cfg, video, None, workdir=tmp)})
+            except Exception as e:
+                results.append({"file": os.path.basename(video), "action": "failed", "detail": str(e)[:200]})
+    return jsonify({"ok": True, "results": results})
+

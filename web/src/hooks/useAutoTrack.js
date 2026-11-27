@@ -21,6 +21,7 @@ export default function useAutoTrack({ message, setCfg }) {
   const [showOptions, setShowOptions] = useState([]);
   const [showSearching, setShowSearching] = useState(false);
   const [aiKey, setAiKey] = useState('');
+  const [assrtToken, setAssrtToken] = useState('');
   const [traktToken, setTraktToken] = useState('');
   const [presets, setPresets] = useState([]);
   const [aiPresets, setAiPresets] = useState([]);
@@ -310,6 +311,7 @@ export default function useAutoTrack({ message, setCfg }) {
       auto_tv_preset: tvPreset, auto_movie_preset: moviePreset,
     };
     if (aiKey) body.ai_api_key = aiKey;
+    if (assrtToken) body.assrt_token = assrtToken;
     if (traktToken) body.trakt_token = traktToken;
     const r = await api('/api/config', { method: 'POST', body });
     setCfg(r); setAiKey(''); setTraktToken('');
@@ -498,7 +500,7 @@ export default function useAutoTrack({ message, setCfg }) {
     testAiPreset,
     fetchAiModels,
     startTraktOauth,
-    savePreset,
+    savePreset, assrtToken, setAssrtToken,
     saveAuto,
     revealAi,
     revealTrakt,

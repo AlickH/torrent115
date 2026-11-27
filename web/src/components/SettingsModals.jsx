@@ -24,6 +24,7 @@ export function SettingsModal(props) {
     autoForm, setAutoForm, auto, traktToken, setTraktToken, revealTrakt,
     startTraktOauth, traktOauthError,
     aiPresets, newAiPreset, editAiPreset, deleteAiPreset,
+    assrtToken, setAssrtToken,
   } = props;
   const body = (
     <>
@@ -169,6 +170,15 @@ export function SettingsModal(props) {
           {!aiPresets.length ? <Typography.Text type="secondary" style={{ fontSize: 12 }}>还没有 AI 预设</Typography.Text> : null}
         </Flex>
         <Button onClick={newAiPreset}>新建 AI 预设</Button>
+        <Divider orientation="left" style={{ margin: '16px 0 12px' }}>字幕来源（assrt.net）</Divider>
+        <Form.Item label="assrt API Token">
+          <Input.Password value={assrtToken} onChange={e => setAssrtToken(e.target.value)}
+            placeholder={auto?.has_assrt ? '已配置（留空＝不修改）' : '免费注册后可获取'} />
+        </Form.Item>
+        <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
+          填了之后「补中字」会先去 assrt 找现成中文字幕，找不到才用 AI 翻译。
+          获取：<a href="https://assrt.net/usercp.php" target="_blank" rel="noreferrer">assrt.net 用户中心 →</a>
+        </Typography.Paragraph>
       </Form>
 
     </>

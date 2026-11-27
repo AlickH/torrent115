@@ -18,6 +18,8 @@ export default function BtDownloads() {
   const [adding, setAdding] = useState(false);
   const [detail, setDetail] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [subsBusy, setSubsBusy] = useState('');
+  const [subsResult, setSubsResult] = useState(null);
   const timer = useRef(null);
 
   const load = async () => {
@@ -50,6 +52,22 @@ export default function BtDownloads() {
       message.error(e.message || '添加失败');
     }
     setAdding(false);
+  };
+
+  const fixSubs = async (t) => {
+    setSubsBusy(t.hash);
+    setSubsResult(null);
+    try {
+      const r = await api('/api/subs/fix', { method: 'POST', body: { hash: t.hash } });
+      if (!r.ok) message.error(r.error || '处理失败');
+      else {
+        setSubsResult(r.results);
+        r.results.forEach(x => message.info(`${x.file}：${x.detail}`));
+      }
+    } catch (e) {
+      message.error(e.message || '处理失败');
+    }
+    setSubsBusy('');
   };
 
   const action = async (path, hash) => {
@@ -101,13 +119,16 @@ export default function BtDownloads() {
       ),
     },
     {
-      title: '操作', width: 150,
+      title: '操作', width: 210,
       render: (_, t) => (
         <Space>
           {t.state === 'paused'
             ? <Button size="small" icon={<PlayCircleOutlined />} onClick={() => action('/api/bt/resume', t.hash)} />
             : <Button size="small" icon={<PauseCircleOutlined />} onClick={() => action('/api/bt/pause', t.hash)} />}
           <Button size="small" onClick={() => showDetail(t)}>详情</Button>
+          {t.state === 'seeding' || t.state === 'paused' || t.progress >= 100 ? (
+            <Button size="small" loading={subsBusy === t.hash} onClick={() => fixSubs(t)}>中字</Button>
+          ) : null}
           <Button size="small" danger icon={<DeleteOutlined />} onClick={() => action('/api/bt/delete', t.hash)} />
         </Space>
       ),
@@ -134,6 +155,16 @@ export default function BtDownloads() {
           <Descriptions.Item label="完成量">{detail?.properties?.completed ? (detail.properties.completed / 1073741824).toFixed(2) + ' GB' : '-'}</Descriptions.Item>
           <Descriptions.Item label="分享率">{detail?.properties?.share_ratio ?? '-'}</Descriptions.Item>
         </Descriptions>
+        {subsResult ? (
+          <div style={{ marginBottom: 12 }}>
+            {subsResult.map(r => (
+              <div key={r.file} style={{ fontSize: 12 }}>
+                <Tag color={r.action === 'failed' ? 'red' : 'green'}>{r.action}</Tag>
+                {r.file} — {r.detail}
+              </div>
+            ))}
+          </div>
+        ) : null}
         <Tabs items={[
           { key: 'trackers', label: 'Tracker', children: (
             <Table rowKey={(r, i) => r.url + i} size="small" pagination={false} dataSource={detail?.trackers || []}

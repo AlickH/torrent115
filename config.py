@@ -77,6 +77,7 @@ DEFAULT_CONFIG = {
     "ai_base_url": "https://api.openai.com/v1",
     "ai_api_key": "",
     "ai_model": "gpt-4o-mini",
+    "assrt_token": "",
     "trakt_client_id": "",
     "trakt_token": "",
     "sites": {
@@ -126,11 +127,12 @@ def save_config(cfg):
     os.replace(tmp, CONFIG_PATH)
 
 def public_config(cfg):
-    out = {k: v for k, v in cfg.items() if k not in ("p115_cookie", "tmdb_api_key", "ai_api_key", "trakt_token")}
+    out = {k: v for k, v in cfg.items() if k not in ("p115_cookie", "tmdb_api_key", "ai_api_key", "trakt_token", "assrt_token")}
     out["has_cookie"] = bool(cfg.get("p115_cookie"))
     out["cookie_hint"] = (cfg.get("p115_cookie") or "")[:6] + "..." if cfg.get("p115_cookie") else ""
     out["has_tmdb"] = bool(cfg.get("tmdb_api_key"))
     out["has_ai"] = bool(cfg.get("ai_api_key"))
+    out["has_assrt"] = bool(cfg.get("assrt_token"))
     out["has_trakt"] = bool(cfg.get("trakt_token"))
     presets = []
     for pr in (cfg.get("auto_presets") or []):

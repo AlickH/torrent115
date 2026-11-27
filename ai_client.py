@@ -72,11 +72,11 @@ def chat_text(cfg, messages, **kw):
 def chat_json(cfg, messages, **kw):
     """让模型返回 JSON，容忍 ```json 围栏和前后废话。"""
     text = chat_text(cfg, messages, **kw)
-    start = text.find("{")
-    end = text.rfind("}")
-    if start == -1 or end <= start:
-        start = text.find("[")
-        end = text.rfind("]")
+    i_obj, i_arr = text.find("{"), text.find("[")
+    if i_arr != -1 and (i_obj == -1 or i_arr < i_obj):
+        start, end = i_arr, text.rfind("]")
+    else:
+        start, end = i_obj, text.rfind("}")
     if start == -1 or end <= start:
         return None
     try:
