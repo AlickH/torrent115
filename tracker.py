@@ -11,7 +11,6 @@ import requests
 import localtorrent
 from localtorrent import has_progress, is_completed
 import agent
-import jev
 import websearch
 
 _LOCAL = {"client": None}
@@ -439,6 +438,21 @@ AUDIO_ONLY_RE = re.compile(
 )
 AUDIO_ONLY_CN = ("原声", "原聲", "无损", "無損", "专辑", "專輯")
 
+ADULT_RE = re.compile(
+    r"(?<![a-z0-9])(porn|r18|18\+|av女优|无码|無碼|有码|有碼|h漫|里番|裏番|nsfw)(?![a-z0-9])"
+)
+ADULT_CN = ("成人", "色情", "裸聊", "做爱", "自慰")
+
+
+def is_adult_release(item):
+    title = (item.get("title") or "").lower()
+    if ADULT_RE.search(title):
+        return True
+    if any(w in title for w in ADULT_CN):
+        return True
+    return "成人" in (item.get("meta") or "")
+
+
 CAM_RE = re.compile(
     r"(?<![a-z0-9])(cam|camrip|hdcam|hqcam|hdts|hdtc|telesync|telecine|tsrip)(?![a-z0-9])"
 )
@@ -506,6 +520,8 @@ def rank_candidates(cfg, items, episode=None):
     exclude_cam = bool(cfg.get("auto_exclude_cam", True)) and (episode or {}).get("media_type") == "movie"
     for it in items:
         if not is_video_release(it.get("title")):
+            continue
+        if is_adult_release(it):
             continue
         if exclude_cam and is_cam_release(it.get("title")):
             continue
@@ -755,16 +771,6 @@ def _process_episode(cfg, ep, eff, dry_run, excluded, timeout_min):
     if not ranked:
         log(f"[auto] {_label(ep)} 未找到合适资源")
         return "none"
-
-    if jev.available(eff):
-        ranked, dropped, uncertain = jev.prefilter(eff, ep, ranked)
-        if dropped:
-            log(f"[auto] {_label(ep)} Jev 预筛剔除 {dropped} 条无关候选")
-        if uncertain:
-            log(f"[auto] {_label(ep)} {uncertain} 条候选相关度存疑，保留给 AI 判断")
-        if not ranked:
-            log(f"[auto] {_label(ep)} 候选全部被预筛剔除，换个关键词再试")
-            return "none"
 
     picks = None
     if eff.get("ai_enabled"):

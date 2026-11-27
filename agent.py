@@ -5,6 +5,7 @@ import json
 import ai_client
 
 MAX_STEPS = 6
+MAX_CANDIDATES_IN_PROMPT = 25
 SEARCH_BUDGET = 3
 RESEARCH_BUDGET = 2
 
@@ -95,9 +96,11 @@ class Decider:
             need = f"电影《{target}》{ep.get('year') or ''}"
         else:
             need = f"剧集《{target}》{ep.get('key') or ''}"
-        rows = [_row(i, c) for i, c in enumerate(self.candidates)]
+        rows = [_row(i, c) for i, c in enumerate(self.candidates[:MAX_CANDIDATES_IN_PROMPT])]
+        overflow = len(self.candidates) - len(rows)
+        tail = f"\n另有 {overflow} 条候选未列出（排序靠后）。" if overflow > 0 else ""
         return (f"目标：{need}\n"
-                f"已搜到的候选（JSON）：{json.dumps(rows, ensure_ascii=False)}")
+                f"已搜到的候选（JSON）：{json.dumps(rows, ensure_ascii=False)}{tail}")
 
     def _dispatch(self, name, args):
         if name == "search_resources":
