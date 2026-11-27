@@ -20,6 +20,10 @@ export default function BtDownloads() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [subsBusy, setSubsBusy] = useState('');
   const [subsResult, setSubsResult] = useState(null);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameItems, setRenameItems] = useState([]);
+  const [renameBase, setRenameBase] = useState('');
+  const [renaming, setRenaming] = useState(false);
   const timer = useRef(null);
 
   const load = async () => {
@@ -52,6 +56,32 @@ export default function BtDownloads() {
       message.error(e.message || '添加失败');
     }
     setAdding(false);
+  };
+
+  const planRename = async (t) => {
+    setRenaming(true);
+    try {
+      const r = await api('/api/rename/plan', { method: 'POST', body: { hash: t.hash } });
+      if (!r.ok) message.error(r.error || '读取失败');
+      else { setRenameItems(r.items || []); setRenameBase(r.path || ''); setRenameOpen(true); }
+    } catch (e) { message.error(e.message || '读取失败'); }
+    setRenaming(false);
+  };
+
+  const applyRename = async () => {
+    setRenaming(true);
+    try {
+      const r = await api('/api/rename/apply', { method: 'POST', body: { items: renameItems, path: renameBase } });
+      if (!r.ok) message.error(r.error || '失败');
+      else {
+        const ok = (r.results || []).filter(x => x.ok).length;
+        const bad = (r.results || []).filter(x => !x.ok);
+        message.success(`已整理 ${ok} 个文件`);
+        bad.forEach(b => message.error(`${b.src}: ${b.error}`));
+        setRenameOpen(false);
+      }
+    } catch (e) { message.error(e.message || '失败'); }
+    setRenaming(false);
   };
 
   const fixSubs = async (t) => {
@@ -119,7 +149,7 @@ export default function BtDownloads() {
       ),
     },
     {
-      title: '操作', width: 210,
+      title: '操作', width: 280,
       render: (_, t) => (
         <Space>
           {t.state === 'paused'
@@ -127,7 +157,10 @@ export default function BtDownloads() {
             : <Button size="small" icon={<PauseCircleOutlined />} onClick={() => action('/api/bt/pause', t.hash)} />}
           <Button size="small" onClick={() => showDetail(t)}>详情</Button>
           {t.state === 'seeding' || t.state === 'paused' || t.progress >= 100 ? (
-            <Button size="small" loading={subsBusy === t.hash} onClick={() => fixSubs(t)}>中字</Button>
+            <>
+              <Button size="small" loading={subsBusy === t.hash} onClick={() => fixSubs(t)}>中字</Button>
+              <Button size="small" loading={renaming} onClick={() => planRename(t)}>命名</Button>
+            </>
           ) : null}
           <Button size="small" danger icon={<DeleteOutlined />} onClick={() => action('/api/bt/delete', t.hash)} />
         </Space>
@@ -189,6 +222,18 @@ export default function BtDownloads() {
               ]} />
           ) },
         ]} />
+      </Modal>
+      <Modal open={renameOpen} onCancel={() => setRenameOpen(false)} title="整理命名（刮削结构）" width={980}
+        okText="应用" confirmLoading={renaming} onOk={applyRename}>
+        <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
+          目录：{renameBase}
+        </Typography.Paragraph>
+        <Table rowKey={r => r.src} size="small" pagination={false} dataSource={renameItems}
+          columns={[
+            { title: '原文件', dataIndex: 'src', ellipsis: true, render: v => v.replace(renameBase, '') },
+            { title: '目标', dataIndex: 'dst', ellipsis: true, render: v => v.replace(renameBase, '') },
+            { title: '识别', width: 120, render: (_, r) => r.kind === 'tv' ? `S${String(r.season).padStart(2, '0')}E${String(r.episode).padStart(2, '0')}` : (r.year || '-') },
+          ]} />
       </Modal>
     </div>
   );

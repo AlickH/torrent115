@@ -895,3 +895,43 @@ def api_115_play():
         return jsonify({"ok": False, "error": str(e)[:200]})
     return redirect(url)
 
+def _bt_task_path(body):
+    import btdownloader
+    task = next((t for t in btdownloader.tasks() if t["hash"] == str(body.get("hash") or "").lower()), None)
+    if not task:
+        return None
+    return os.path.join(task.get("save_path") or "", task.get("name") or "")
+
+
+@bp.route("/api/rename/plan", methods=["POST"])
+def api_rename_plan():
+    import rename
+    body = request.get_json(force=True, silent=True) or {}
+    path = (body.get("path") or "").strip()
+    if not path and body.get("hash"):
+        path = _bt_task_path(body) or ""
+    if not path or not os.path.exists(path):
+        return jsonify({"ok": False, "error": "路径不存在"})
+    items = rename.plan(path)
+    return jsonify({"ok": True, "items": items, "path": path})
+
+
+@bp.route("/api/rename/apply", methods=["POST"])
+def api_rename_apply():
+    import rename
+    body = request.get_json(force=True, silent=True) or {}
+    items = body.get("items") or []
+    if not items:
+        return jsonify({"ok": False, "error": "没有要处理的文件"})
+    base = (body.get("path") or "").strip()
+    safe = []
+    for it in items:
+        src, dst = it.get("src") or "", it.get("dst") or ""
+        if not src or not dst:
+            continue
+        if base and not (os.path.abspath(src).startswith(os.path.abspath(base))
+                         and os.path.abspath(dst).startswith(os.path.abspath(base))):
+            return jsonify({"ok": False, "error": "目标路径越界：" + dst})
+        safe.append(it)
+    return jsonify({"ok": True, "results": rename.apply(safe)})
+

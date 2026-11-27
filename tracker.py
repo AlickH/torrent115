@@ -940,6 +940,24 @@ def _process_episode(cfg, ep, eff, dry_run, excluded, timeout_min):
     return "done"
 
 
+STALL_CAP_MIN = 8
+
+
+def _stalled(now, check_ts, task, pct, timeout_min):
+    """进度不动且没有 peer（或 left_time 归零）→ 提前换源，不必等满超时。"""
+    if not timeout_min:
+        return False
+    cap = min(timeout_min, STALL_CAP_MIN) * 60
+    if now - check_ts < cap:
+        return False
+    rate = int(task.get("rate") or 0)
+    peers = int(task.get("peers") or 0)
+    left = task.get("left_time")
+    if pct < 99.9 and left is not None and int(left) == 0:
+        return True
+    return rate == 0 and peers == 0
+
+
 def run_once(cfg, dry_run=False, only_shows=None):
     if not _RUN_LOCK.acquire(blocking=False):
         log("[auto] 已有任务在运行，跳过")
@@ -1073,6 +1091,15 @@ def run_once(cfg, dry_run=False, only_shows=None):
                                 _STATE["pending"][key] = info
                                 _save()
                                 log(f"[auto] {key} 等待中（暂无 peer），{wait_timeout} 分钟后重试")
+                    elif _stalled(now, check_ts, t, pct, timeout_min):
+                        _STATE["pending"].pop(key, None)
+                        _save()
+                        delete_after.append(h)
+                        if lh:
+                            local_delete_after.append(lh)
+                        if ep:
+                            retry_eps.append((ep, tried))
+                        log(f"[auto] {key} 长时间无进展且无 peer，提前换源（{pct}%，{t.get('status_text') or ''}）")
                     elif timeout_min > 0 and now - check_ts >= timeout_min * 60:
                         _STATE["pending"].pop(key, None)
                         _save()
