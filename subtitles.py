@@ -274,13 +274,22 @@ def _probe_cmd(url, ua):
             "-of", "json", url]
 
 
-def probe_remote(cfg, pickcode, ua="Mozilla/5.0"):
-    """115 云端文件：生成直链（UA 绑定）后只读头部拿字幕轨。"""
+def _fresh_url(cfg, pickcode, ua):
     import p115direct
-    url = p115direct.download_url(cfg, pickcode, user_agent=ua)
-    r = _run(_probe_cmd(url, ua), timeout=180)
-    if r.returncode != 0:
-        raise RuntimeError((r.stderr or "").strip()[:200])
+    return p115direct.download_url(cfg, pickcode, user_agent=ua)
+
+
+def probe_remote(cfg, pickcode, ua="Mozilla/5.0", attempts=3):
+    """115 云端文件：生成直链（UA 绑定）后只读头部拿字幕轨。"""
+    last = ""
+    for _ in range(attempts):
+        url = _fresh_url(cfg, pickcode, ua)
+        r = _run(_probe_cmd(url, ua), timeout=180)
+        if r.returncode == 0:
+            break
+        last = (r.stderr or "").strip()[:200]
+    else:
+        raise RuntimeError(last)
     try:
         streams = (json.loads(r.stdout or "{}") or {}).get("streams") or []
     except Exception:
@@ -323,10 +332,16 @@ def ensure_remote(cfg, pickcode, meta=None, upload_cid=None, ua="Mozilla/5.0", w
         return {"action": "no-track", "detail": "需要翻译但没有配置 AI 模型"}
 
     src = os.path.join(workdir, "src.srt")
-    r = _run(["ffmpeg", "-y", "-v", "error", "-user_agent", ua, "-i", url,
-              "-map", f"0:{track['index']}", "-c:s", "srt", src], timeout=3600)
-    if r.returncode != 0:
-        raise RuntimeError((r.stderr or "").strip()[:200])
+    last = ""
+    for _ in range(3):
+        url = _fresh_url(cfg, pickcode, ua)
+        r = _run(["ffmpeg", "-y", "-v", "error", "-user_agent", ua, "-i", url,
+                  "-map", f"0:{track['index']}", "-c:s", "srt", src], timeout=3600)
+        if r.returncode == 0:
+            break
+        last = (r.stderr or "").strip()[:200]
+    else:
+        raise RuntimeError(last)
     with open(src, encoding="utf-8", errors="ignore") as fh:
         cues = _parse_srt(fh.read())
     os.remove(src)
