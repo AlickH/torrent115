@@ -511,6 +511,7 @@ def api_auto_status():
                                    "auto_dry_run", "ai_enabled", "ai_base_url", "ai_model", "trakt_client_id", "jev_enabled", "jev_base_url", "drivemby_enabled", "auto_rank_order", "auto_seed_tiers", "auto_size_big", "auto_source_order")}
     pub["has_trakt"] = bool(cfg.get("trakt_token"))
     pub["has_ai"] = bool(cfg.get("ai_api_key"))
+    pub["has_jev"] = bool(cfg.get("jev_api_key"))
     pub["has_tmdb"] = bool(cfg.get("tmdb_api_key"))
     pub["ai_presets"] = [dict({k: v for k, v in a.items() if k != "api_key"}, has_key=bool(a.get("api_key"))) for a in (cfg.get("ai_presets") or [])]
     pub.update(auto_track.status())
@@ -807,3 +808,31 @@ def api_115_uploads():
         return jsonify({"ok": True, "uploads": p115upload.uploads()})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e), "uploads": []}), 500
+
+
+@bp.route("/api/jev/test", methods=["POST"])
+def api_jev_test():
+    cfg = load_config()
+    body = request.get_json(force=True, silent=True) or {}
+    if (body.get("api_key") or "").strip():
+        cfg["jev_api_key"] = body["api_key"].strip()
+    if "base_url" in body:
+        cfg["jev_base_url"] = (body.get("base_url") or "").strip()
+    if not (cfg.get("jev_api_key") or "").strip():
+        return jsonify({"ok": False, "error": "未填写 Jev API Key"})
+    import time
+    import jev
+    target = {"media_type": "movie", "show": "测试目标", "year": "2024", "show_en": "Test Target"}
+    rows = [
+        {"title": "Test.Target.2024.1080p.WEB-DL.x264"},
+        {"title": "Completely.Unrelated.Show.S01E05.1080p"},
+    ]
+    started = time.time()
+    try:
+        kept, dropped, uncertain = jev.prefilter(cfg, target, rows)
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)[:200]})
+    elapsed = int((time.time() - started) * 1000)
+    return jsonify({"ok": True, "ms": elapsed, "kept": len(kept), "dropped": dropped,
+                    "uncertain": uncertain, "model": jev.JEV_MODEL,
+                    "base_url": (cfg.get("jev_base_url") or "").strip() or jev.OPENROUTER_DECISIONS})

@@ -4,6 +4,7 @@ import {
 } from 'antd';
 import { EyeOutlined, QrcodeOutlined } from '@ant-design/icons';
 import { api, APP_BASE } from '../api.js';
+import { useState } from 'react';
 import { message } from 'antd';
 import { pickFolder } from '../lib/host.js';
 
@@ -25,6 +26,19 @@ export function SettingsModal(props) {
     startTraktOauth, traktOauthError,
     aiPresets, newAiPreset, editAiPreset, deleteAiPreset,
   } = props;
+  const [jevTesting, setJevTesting] = useState(false);
+  const [jevTestResult, setJevTestResult] = useState(null);
+  const testJev = async () => {
+    setJevTesting(true);
+    setJevTestResult(null);
+    try {
+      const r = await api('/api/jev/test', { method: 'POST', body: { api_key: jevKey || '', base_url: jevBase || '' } });
+      setJevTestResult(r);
+    } catch (e) {
+      setJevTestResult({ ok: false, error: e.message || '请求失败' });
+    }
+    setJevTesting(false);
+  };
   const body = (
     <>
       <Form layout="vertical">
@@ -174,8 +188,18 @@ export function SettingsModal(props) {
           <Switch checked={jevEnabled} onChange={setJevEnabled} />
         </Form.Item>
         <Form.Item label="Jev API Key">
-          <Input.Password value={jevKey} onChange={e => setJevKey(e.target.value)}
-            placeholder={auto?.has_jev ? '已配置（留空＝不修改）' : 'OpenRouter 或 TypeSafe 的 Key'} />
+          <Space.Compact style={{ width: '100%' }}>
+            <Input.Password value={jevKey} onChange={e => setJevKey(e.target.value)}
+              placeholder={auto?.has_jev ? '已配置（留空＝不修改）' : 'OpenRouter 或 TypeSafe 的 Key'} />
+            <Button loading={jevTesting} onClick={testJev}>测试</Button>
+          </Space.Compact>
+          {jevTestResult ? (
+            <Typography.Text type={jevTestResult.ok ? 'success' : 'danger'} style={{ fontSize: 12 }}>
+              {jevTestResult.ok
+                ? `连通正常 · ${jevTestResult.model} · ${jevTestResult.ms}ms · 剔除 ${jevTestResult.dropped}/${jevTestResult.dropped + jevTestResult.kept} 条`
+                : '失败：' + jevTestResult.error}
+            </Typography.Text>
+          ) : null}
         </Form.Item>
         <Form.Item label="Jev Base URL（留空＝OpenRouter decisions 端点）">
           <Input value={jevBase} onChange={e => setJevBase(e.target.value)} placeholder="TypeSafe 官方填 https://api.typesafe.ai/v1/systemone" />
