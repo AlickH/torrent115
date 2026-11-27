@@ -135,6 +135,8 @@ def encode(payload, key=None):
 def decode(text, key=None):
     """key 是编码时用的 16 字节随机种子；服务端在响应里回显它。"""
     raw = _rsa_decrypt(base64.b64decode(text))
+    if len(raw) < 16:
+        raise RuntimeError("115 未返回可用的下载地址（pickcode 可能不是文件）")
     randkey, body = raw[:16], raw[16:]
     body = _xor(body, _derive(randkey, 12))
     body = body[::-1]
