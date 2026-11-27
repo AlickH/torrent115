@@ -273,7 +273,7 @@ def p115_move(cfg, fid, target_cid):
 
 
 def p115_delete(cfg, fid):
-    r = net.http_request(cfg, "POST", "https://webapi.115.com/files/delete",
+    r = net.http_request(cfg, "POST", "https://webapi.115.com/rb/delete",
                          data={"fid[0]": str(fid)}, headers=p115_headers(cfg), timeout=25)
     d = r.json() or {}
     return bool(d.get("state"))
